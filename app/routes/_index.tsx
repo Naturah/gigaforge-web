@@ -1,6 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-
+import { Logo } from "../components/logo";
 export const meta: MetaFunction = () => {
   return [
     { title: "GigaForge - 3D Printed Products" },
@@ -20,7 +20,7 @@ const categories = [
 export default function Index() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-8">GigaForge</h1>
+      <Logo />
       <h2 className="text-2xl mb-4">Categories</h2>
       <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {categories.map((category) => (

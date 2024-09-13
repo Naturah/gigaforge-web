@@ -1,5 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { Logo } from "../components/logo";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,7 +16,7 @@ const categories = [
 export default function Index() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-8">GigaForge</h1>
+      <Logo />
       <p>About</p>
     </div>
   );

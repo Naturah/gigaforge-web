@@ -1,5 +1,6 @@
 import { useParams, Link } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
+import { Logo } from "../components/logo";
 
 export const meta: MetaFunction = ({ params }) => {
   return [
@@ -24,7 +25,7 @@ export default function Category() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-8">GigaForge</h1>
+     <Logo />
       <h2 className="text-2xl mb-4 capitalize">{categoryId} Products</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {categoryProducts.map((product) => (
