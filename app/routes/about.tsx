@@ -1,6 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { Logo } from "../components/logo";
+import Logo from "../components/logo";
 
 export const meta: MetaFunction = () => {
   return [

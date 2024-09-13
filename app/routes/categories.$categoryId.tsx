@@ -1,6 +1,7 @@
 import { useParams, Link } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
-import { Logo } from "../components/logo";
+import Logo from "../components/logo";
+import PageTitle from "../components/pagetitle";
 
 export const meta: MetaFunction = ({ params }) => {
   return [
@@ -26,10 +27,15 @@ export default function Category() {
   return (
     <div className="container mx-auto p-4">
      <Logo />
-      <h2 className="text-2xl mb-4 capitalize">{categoryId} Products</h2>
+      <PageTitle>{categoryId} Products</PageTitle>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {categoryProducts.map((product) => (
           <div key={product.id} className="border p-4 rounded-lg shadow-md">
+            <img
+              src={`https://placehold.co/300x200?text=${encodeURIComponent(product.name)}`}
+              alt={product.name}
+              className="w-full h-48 object-cover mb-4 rounded-lg"
+            />
             <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
             <p className="text-gray-600 mb-4">${product.price.toFixed(2)}</p>
             <Link
