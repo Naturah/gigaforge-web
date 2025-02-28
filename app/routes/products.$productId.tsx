@@ -2,6 +2,8 @@ import { useParams, Link, useLoaderData, useFetcher } from "@remix-run/react";
 import { json, LoaderFunction, MetaFunction } from "@remix-run/node";
 import Logo from "../components/logo";
 import useLocalStorage from "../functions/useLocalStorage";
+import { useEffect, useState } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 
 // This would typically come from a database or API
 // TODO: Use Stripe products or Shopify as a headless CMS
@@ -75,6 +77,9 @@ const products = {
   },
 };
 
+// Initialize Stripe with your publishable key
+const stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY || '');
+
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
     {
@@ -94,17 +99,51 @@ export const loader: LoaderFunction = async ({ params }) => {
   if (!product) {
     throw new Response("Product not found", { status: 404 });
   }
-  return json({ product });
+  return json({ 
+    product,
+    env: {
+      // Pass the publishable key to the client
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    }
+  });
 };
 
 export default function Product() {
-  const { product } = useLoaderData<typeof loader>();
+  const { product, env } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const [cart, setCart] = useLocalStorage<any[]>("cart", []); // Initialize cart as an empty array
-  console.log({ cart });
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Handle Stripe Checkout
+  const handleCheckout = async () => {
+    setIsRedirecting(true);
+    
+    const checkoutFetcher = new fetcher.Form();
+    
+    const formData = new FormData();
+    formData.append('productId', product.id);
+    formData.append('productName', product.name);
+    formData.append('productPrice', product.price.toString());
+    
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const { url } = await response.json();
+    
+    if (url) {
+      window.location.href = url;
+    } else {
+      setIsRedirecting(false);
+      alert('Failed to create checkout session');
+    }
+  };
+  
   const addToCart = (product) => {
     setCart([...cart, product]);
   };
+  
   return (
     <div className="container mx-auto p-4">
       <Logo />
@@ -126,13 +165,22 @@ export default function Product() {
             <p className="text-sm text-gray-500 mb-4">
               Category: {product.category}
             </p>
-            <button
-              onClick={() => addToCart({ id: product.id, name: product.name })}
-              disabled={fetcher.state === "submitting"}
-              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-colors"
-            >
-              {fetcher.state === "submitting" ? "Adding..." : "Add to Cart"}
-            </button>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={handleCheckout}
+                disabled={isRedirecting}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-2 rounded hover:from-cyan-600 hover:to-blue-700 transition-colors"
+              >
+                {isRedirecting ? "Redirecting to Checkout..." : "Buy Now with Stripe"}
+              </button>
+              <button
+                onClick={() => addToCart({ id: product.id, name: product.name })}
+                disabled={fetcher.state === "submitting"}
+                className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-colors"
+              >
+                {fetcher.state === "submitting" ? "Adding..." : "Add to Cart"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

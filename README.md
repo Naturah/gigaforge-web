@@ -10,6 +10,24 @@ Run the dev server:
 npm run dev
 ```
 
+## Stripe Integration
+
+This project uses Stripe Checkout for payment processing. To set up Stripe:
+
+1. Create a [Stripe account](https://dashboard.stripe.com/register)
+2. Get your API keys from the [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
+3. Copy `.env.local.example` to `.env.local` and update with your Stripe API keys:
+   ```
+   STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+   STRIPE_SECRET_KEY=sk_test_your_secret_key
+   BASE_URL=http://localhost:3000
+   ```
+4. Restart your development server
+
+For production, make sure to:
+- Use your production Stripe API keys
+- Update the `BASE_URL` to your production URL
+
 ## Deployment
 
 First, build your app for production:
