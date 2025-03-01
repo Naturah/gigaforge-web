@@ -3,10 +3,11 @@ import Logo from "../components/logo";
 
 export default function CheckoutCancel() {
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 max-w-6xl">
       <Logo />
-      <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-6 mt-10 text-center">
-        <div className="mb-4 text-yellow-500">
+      
+      <div className="max-w-md mx-auto bg-black/40 border border-cyan-500/30 shadow-lg shadow-cyan-500/10 rounded-xl p-8 mt-10 text-center backdrop-blur-sm">
+        <div className="mb-6 text-yellow-400">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-16 w-16 mx-auto"
@@ -22,20 +23,24 @@ export default function CheckoutCancel() {
             />
           </svg>
         </div>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Payment Cancelled</h2>
-        <p className="text-gray-600 mb-6">
+        
+        <h2 className="text-2xl font-bold text-white mb-4">Payment Cancelled</h2>
+        
+        <p className="text-gray-300 mb-8">
           Your checkout process was cancelled. No payment has been processed.
         </p>
+        
         <div className="flex flex-col space-y-3">
           <Link
             to="/"
-            className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-colors"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-colors shadow-lg shadow-cyan-500/20"
           >
             Return to Home
           </Link>
+          
           <button
             onClick={() => window.history.back()}
-            className="text-blue-600 hover:underline"
+            className="border border-cyan-500 text-cyan-400 px-6 py-3 rounded-lg font-medium hover:bg-cyan-500/10 transition-colors"
           >
             Back to Previous Page
           </button>

@@ -16,6 +16,7 @@ export const action: ActionFunction = async ({ request }) => {
     const productId = formData.get('productId')?.toString();
     const productName = formData.get('productName')?.toString();
     const productPrice = parseFloat(formData.get('productPrice')?.toString() || '0');
+    const quantity = parseInt(formData.get('quantity')?.toString() || '1');
 
     if (!productId || !productName || !productPrice) {
       return json({ error: 'Missing required product information' }, { status: 400 });
@@ -30,15 +31,22 @@ export const action: ActionFunction = async ({ request }) => {
             currency: 'usd',
             product_data: {
               name: productName,
+              description: `Product ID: ${productId}`,
             },
-            unit_amount: Math.round(productPrice * 100), // Convert to cents
+            unit_amount: Math.round((productPrice / quantity) * 100), // Convert to cents and use per-unit price
           },
-          quantity: 1,
+          quantity: quantity,
         },
       ],
       mode: 'payment',
       success_url: `${process.env.BASE_URL || 'http://localhost:3000'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.BASE_URL || 'http://localhost:3000'}/checkout/cancel`,
+      payment_intent_data: {
+        metadata: {
+          productId: productId,
+          quantity: quantity.toString(),
+        },
+      },
     });
 
     return json({ url: session.url });
