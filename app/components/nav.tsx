@@ -1,9 +1,11 @@
 import { NavLink } from "@remix-run/react";
 import { useState } from "react";
 import Logo from "./logo";
+import { UserButton, useAuth } from "@clerk/remix";
 
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
+  const { userId } = useAuth();
 
   return (
     <nav className="shadow-xl sticky top-0 z-50 bg-black/40 backdrop-blur-lg border-b border-gray-700 py-3">
@@ -54,6 +56,44 @@ export default function Nav() {
           >
             About
           </NavLink>
+          
+          {/* Authentication Links */}
+          <div className="ml-4 flex items-center">
+            {userId ? (
+              <div className="flex items-center gap-3">
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
+                      isActive ? "text-white bg-gray-800" : ""
+                    }`
+                  }
+                >
+                  Profile
+                </NavLink>
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <NavLink
+                  to="/sign-in"
+                  className={({ isActive }) =>
+                    `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
+                      isActive ? "text-white bg-gray-800" : ""
+                    }`
+                  }
+                >
+                  Sign In
+                </NavLink>
+                <NavLink
+                  to="/sign-up"
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+                >
+                  Sign Up
+                </NavLink>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
@@ -144,6 +184,47 @@ export default function Nav() {
           >
             About
           </NavLink>
+          
+          {/* Mobile Authentication Links */}
+          {userId ? (
+            <>
+              <NavLink
+                to="/profile"
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) =>
+                  `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
+                    isActive ? "text-white bg-gray-800" : ""
+                  }`
+                }
+              >
+                Profile
+              </NavLink>
+              <div className="p-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </>
+          ) : (
+            <>
+              <NavLink
+                to="/sign-in"
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) =>
+                  `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
+                    isActive ? "text-white bg-gray-800" : ""
+                  }`
+                }
+              >
+                Sign In
+              </NavLink>
+              <NavLink
+                to="/sign-up"
+                onClick={() => setIsOpen(false)}
+                className="block py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg my-1"
+              >
+                Sign Up
+              </NavLink>
+            </>
+          )}
         </div>
       )}
     </nav>

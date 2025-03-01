@@ -8,7 +8,9 @@ import {
   useRouteError,
   isRouteErrorResponse,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunction } from "@remix-run/node";
+import { ClerkApp } from '@clerk/remix';
+import { rootAuthLoader } from '@clerk/remix/ssr.server';
 import Nav from "./components/nav";
 
 import styles from "./tailwind.css?url";
@@ -17,7 +19,10 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ];
 
-export default function App() {
+// Add Clerk's root loader
+export const loader: LoaderFunction = args => rootAuthLoader(args);
+
+function App() {
   return (
     <html lang="en">
       <head>
@@ -53,6 +58,9 @@ export default function App() {
     </html>
   );
 }
+
+// Wrap the App component with ClerkApp
+export default ClerkApp(App);
 
 export function ErrorBoundary() {
   const error = useRouteError();
