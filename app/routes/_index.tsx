@@ -41,6 +41,28 @@ const featuredProducts = [
   { id: "robot", name: "Articulated Robot", category: "toys", price: 24.99, image: "https://placehold.co/600x400?text=Articulated+Robot" }
 ];
 
+// Sample featured forges data
+const featuredForges = [
+  {
+    id: "workspace-optimization",
+    title: "Workspace Optimization",
+    description: "Transform your desk setup with these essential 3D prints",
+    image: "https://placehold.co/600x400?text=Workspace+Optimization",
+    printCount: 5,
+    difficulty: "Beginner",
+    estimatedTime: "3 days"
+  },
+  {
+    id: "smart-home-essentials",
+    title: "Smart Home Essentials",
+    description: "Level up your smart home with these useful accessories",
+    image: "https://placehold.co/600x400?text=Smart+Home+Essentials",
+    printCount: 7,
+    difficulty: "Intermediate",
+    estimatedTime: "5 days"
+  }
+];
+
 export default function Index() {
   return (
     <div className="container mx-auto p-4 max-w-6xl">
@@ -69,6 +91,57 @@ export default function Index() {
           </Link>
         </div>
       </div>
+      
+      {/* Featured Forges Section */}
+      <section className="mb-16">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">Featured Forges</h2>
+            <p className="text-gray-400">Guided 3D printing journeys to level up your skills</p>
+          </div>
+          <Link to="/forges" className="text-cyan-400 hover:underline">View All Forges</Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {featuredForges.map((forge) => (
+            <Link 
+              to={`/forges/${forge.id}`} 
+              key={forge.id} 
+              className="bg-black/40 border border-cyan-500/30 rounded-xl overflow-hidden hover:shadow-lg hover:shadow-cyan-500/20 transition-all group relative"
+            >
+              <div className="aspect-video overflow-hidden relative">
+                <img 
+                  src={forge.image} 
+                  alt={forge.title} 
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="text-xl font-bold text-white">{forge.title}</h3>
+                  <p className="text-gray-300 text-sm mt-1">{forge.description}</p>
+                </div>
+              </div>
+              <div className="p-4 flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                  <div className="text-center">
+                    <span className="text-xs block text-gray-400">Prints</span>
+                    <span className="text-cyan-400 font-bold">{forge.printCount}</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs block text-gray-400">Difficulty</span>
+                    <span className="text-cyan-400 font-bold">{forge.difficulty}</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs block text-gray-400">Time</span>
+                    <span className="text-cyan-400 font-bold">{forge.estimatedTime}</span>
+                  </div>
+                </div>
+                <span className="bg-cyan-500/20 text-cyan-400 text-xs rounded px-2 py-1">Explore Forge</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
       
       {/* Featured Products */}
       <section className="mb-16">
