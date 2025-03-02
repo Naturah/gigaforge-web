@@ -106,9 +106,7 @@ function App() {
         <div id="remix-app-root" className="flex flex-col min-h-screen">
           <Nav />
           <div className="flex-grow">
-            <ContentErrorBoundary>
-              <Outlet />
-            </ContentErrorBoundary>
+            <Outlet />
           </div>
           <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
             <div className="container mx-auto px-4">

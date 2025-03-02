@@ -5,7 +5,7 @@
 
 import * as React from "react";
 import { RemixBrowser } from "@remix-run/react";
-import { startTransition, StrictMode, Suspense } from "react";
+import { startTransition, Suspense } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/remix";
 
@@ -22,11 +22,7 @@ declare global {
 console.log("entry.client.tsx loaded");
 
 /**
- * Island Architecture approach:
- * 1. Instead of trying to hydrate the entire document, we'll create a new div
- * 2. Replace the body content with that div
- * 3. Hydrate just that div with our React app
- * This completely bypasses hydration mismatches
+ * Island Architecture approach with extra precautions for Clerk and Suspense
  */
 function initializeClient() {
   // Create app root element
@@ -34,7 +30,6 @@ function initializeClient() {
   appRootElement.id = "app-root";
   
   // Get the container element where we'll attach our app
-  // This is typically a root div in the document
   const rootContainer = document.getElementById("remix-app-root") || document.body;
   
   // Save any existing attributes from the root container
@@ -68,36 +63,45 @@ function initializeClient() {
   
   console.log("Starting hydration...");
   
-  // Determine if we're using Clerk
-  const hasClerkKey = !!window.ENV?.CLERK_PUBLISHABLE_KEY;
-  console.log("Has Clerk key:", hasClerkKey);
-  
   try {
+    // Determine if we're using Clerk
+    const hasClerkKey = !!window.ENV?.CLERK_PUBLISHABLE_KEY;
+    console.log("Has Clerk key:", hasClerkKey);
+    
     // Create app with or without Clerk based on key availability
-    const App = hasClerkKey 
-      ? (
-        <StrictMode>
+    if (hasClerkKey) {
+      console.log("Using ClerkProvider");
+      
+      // First render a placeholder to give the browser time to stabilize
+      const root = hydrateRoot(
+        appRootElement, 
+        <div id="app-placeholder">Loading application...</div>
+      );
+      
+      // After a short delay, render the actual app
+      setTimeout(() => {
+        console.log("Rendering Clerk app");
+        root.render(
           <Suspense fallback={<div>Loading application...</div>}>
             <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
               <RemixBrowser />
             </ClerkProvider>
           </Suspense>
-        </StrictMode>
-      ) 
-      : (
-        <StrictMode>
-          <Suspense fallback={<div>Loading application...</div>}>
-            <RemixBrowser />
-          </Suspense>
-        </StrictMode>
-      );
+        );
+      }, 50);
+    } else {
+      console.log("Skipping ClerkProvider");
       
-    // Hydrate our new app root
-    startTransition(() => {
-      hydrateRoot(appRootElement, App);
-    });
+      // Render without Clerk
+      hydrateRoot(
+        appRootElement,
+        <Suspense fallback={<div>Loading application...</div>}>
+          <RemixBrowser />
+        </Suspense>
+      );
+    }
     
-    console.log("Hydration started successfully");
+    console.log("Hydration process initiated successfully");
   } catch (error) {
     console.error("Error during hydration:", error);
     
@@ -106,6 +110,7 @@ function initializeClient() {
       <div style="padding: 20px; text-align: center; color: white; background-color: #111; border: 1px solid #444; border-radius: 8px; margin: 20px;">
         <h2 style="color: #f55">Failed to load application</h2>
         <p>There was a problem initializing the application.</p>
+        <p style="color: #999; font-size: 12px; margin-top: 10px;">Error: ${error?.message || 'Unknown error'}</p>
         <button onclick="window.location.reload()" 
                 style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px;">
           Reload page
@@ -116,7 +121,6 @@ function initializeClient() {
 }
 
 // Start the process after a short delay to ensure the DOM is fully loaded
-// This is especially important for the island architecture approach
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(() => {
     initializeClient();
@@ -124,5 +128,5 @@ if (typeof requestIdleCallback === "function") {
 } else {
   setTimeout(() => {
     initializeClient();
-  }, 1);
+  }, 10);
 }
