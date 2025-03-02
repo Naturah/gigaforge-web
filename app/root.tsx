@@ -159,10 +159,37 @@ function App() {
 }
 
 // Wrap the App component with ClerkApp
-export default typeof process.env.CLERK_PUBLISHABLE_KEY === 'string' && 
-          !process.env.CLERK_PUBLISHABLE_KEY.includes('your_dev_key')
-  ? ClerkApp(App)
-  : App;
+export default (() => {
+  // More robust check for valid Clerk publishable key
+  const hasValidPublishableKey = 
+    typeof process.env.CLERK_PUBLISHABLE_KEY === 'string' && 
+    process.env.CLERK_PUBLISHABLE_KEY.trim() !== '' && 
+    !process.env.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
+    (process.env.CLERK_PUBLISHABLE_KEY.startsWith('pk_test_') || 
+     process.env.CLERK_PUBLISHABLE_KEY.startsWith('pk_live_'));
+  
+  // More robust check for valid Clerk secret key  
+  const hasValidSecretKey = 
+    typeof process.env.CLERK_SECRET_KEY === 'string' && 
+    process.env.CLERK_SECRET_KEY.trim() !== '' && 
+    !process.env.CLERK_SECRET_KEY.includes('your_dev_key') &&
+    (process.env.CLERK_SECRET_KEY.startsWith('sk_test_') || 
+     process.env.CLERK_SECRET_KEY.startsWith('sk_live_'));
+  
+  // Only use ClerkApp if both keys are valid
+  if (hasValidPublishableKey && hasValidSecretKey) {
+    return ClerkApp(App);
+  } else {
+    // Log detailed information about why Clerk isn't being used
+    if (!hasValidPublishableKey) {
+      console.warn("Clerk publishable key is invalid or missing. Using app without Clerk authentication.");
+    }
+    if (!hasValidSecretKey) {
+      console.warn("Clerk secret key is invalid or missing. Using app without Clerk authentication.");
+    }
+    return App;
+  }
+})();
 
 // Keep the exported ErrorBoundary function for Remix root error handling
 export function ErrorBoundary() {

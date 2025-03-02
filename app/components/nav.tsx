@@ -3,34 +3,64 @@ import { useState, useEffect } from "react";
 import Logo from "./logo";
 import { UserButton, useAuth } from "@clerk/remix";
 
+// Create a separate Auth component that safely uses Clerk hooks
+function AuthContent() {
+  // This component will only be rendered when ClerkProvider is available
+  const auth = useAuth();
+  return auth?.userId || null;
+}
+
+// Creates a wrapper that safely attempts to use Clerk hooks
+function SafeAuth({ children, onAuthStatus }: { 
+  children: (userId: string | null) => React.ReactNode,
+  onAuthStatus: (status: boolean) => void 
+}) {
+  try {
+    // Check if Clerk's context is available (this is synchronous)
+    const userId = <AuthContent />;
+    // If we get here, Clerk is available
+    onAuthStatus(true);
+    return <>{children(userId?.props || null)}</>;
+  } catch (e) {
+    // Clerk context not available
+    onAuthStatus(false);
+    return <>{children(null)}</>;
+  }
+}
+
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
   const [authAvailable, setAuthAvailable] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   
-  // Get auth outside of useEffect
-  const auth = useAuth();
+  // Safe way to check if ClerkProvider is available and then use useAuth
+  const updateAuthStatus = (status: boolean) => {
+    setAuthAvailable(status);
+  };
   
-  useEffect(() => {
-    // Check if Clerk is properly initialized
-    const hasValidClerkKey = window.ENV?.CLERK_PUBLISHABLE_KEY && 
-                            !window.ENV.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
-                            window.ENV.CLERK_PUBLISHABLE_KEY.trim() !== '';
-    
-    if (hasValidClerkKey) {
-      setAuthAvailable(true);
-      
-      // Use the auth from outside useEffect
-      try {
-        setUserId(auth?.userId || null);
-      } catch (e) {
-        console.warn("Auth context not available", e);
-      }
-    }
-  }, [auth?.userId]);
+  const updateUserId = (id: string | null) => {
+    setUserId(id);
+  };
+  
+  const hasValidClerkKey = typeof window !== 'undefined' && 
+    window.ENV?.CLERK_PUBLISHABLE_KEY && 
+    !window.ENV.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
+    window.ENV.CLERK_PUBLISHABLE_KEY.trim() !== '';
 
   return (
     <nav className="shadow-xl sticky top-0 z-50 bg-black/40 backdrop-blur-lg border-b border-gray-700 py-3">
+      {/* Attempt to use Clerk hooks safely */}
+      {hasValidClerkKey && (
+        <SafeAuth onAuthStatus={updateAuthStatus}>
+          {(uid) => {
+            if (uid !== userId) {
+              updateUserId(uid);
+            }
+            return null;
+          }}
+        </SafeAuth>
+      )}
+      
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
           <Logo small />

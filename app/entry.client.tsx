@@ -26,6 +26,7 @@ console.log("entry.client.tsx loaded");
  */
 function SafeClerkApp() {
   const [error, setError] = useState<Error | null>(null);
+  const [clerkAttempted, setClerkAttempted] = useState(false);
   
   // If there was an error rendering with Clerk, show the error or fallback
   if (error) {
@@ -34,27 +35,42 @@ function SafeClerkApp() {
   }
   
   try {
-    // Only use Clerk if we actually have the key
-    if (window.ENV?.CLERK_PUBLISHABLE_KEY) {
-      const publishableKey = window.ENV.CLERK_PUBLISHABLE_KEY;
-      
-      // Validate the publishable key format
-      if (!publishableKey || publishableKey.includes('your_dev_key') || publishableKey.trim() === '') {
-        console.warn("Invalid Clerk publishable key found, rendering without Clerk");
-        return <RemixBrowser />;
-      }
-      
+    // Detect if we have a publishable key and it's valid
+    const publishableKey = window.ENV?.CLERK_PUBLISHABLE_KEY || '';
+    
+    // More thorough validation of the key
+    const isValidKey = 
+      publishableKey && 
+      publishableKey.trim() !== '' && 
+      !publishableKey.includes('your_dev_key') &&
+      (publishableKey.startsWith('pk_test_') || publishableKey.startsWith('pk_live_'));
+    
+    // Only try to use Clerk if we have a properly formatted key
+    if (isValidKey) {
       console.log("Using Clerk with publishable key:", publishableKey.substring(0, 10) + "...");
       
       return (
-        <ErrorCatcher onError={setError}>
+        <ErrorCatcher onError={(e) => {
+          console.error("ClerkProvider error:", e);
+          setError(e);
+          setClerkAttempted(true);
+        }}>
           <ClerkProvider publishableKey={publishableKey}>
             <RemixBrowser />
           </ClerkProvider>
         </ErrorCatcher>
       );
     } else {
-      console.warn("No Clerk publishable key found, rendering without Clerk");
+      // Log a clear message about why Clerk isn't being used
+      if (!publishableKey || publishableKey.trim() === '') {
+        console.warn("Clerk publishable key is missing or empty");
+      } else if (publishableKey.includes('your_dev_key')) {
+        console.warn("Clerk publishable key contains placeholder text");
+      } else if (!publishableKey.startsWith('pk_test_') && !publishableKey.startsWith('pk_live_')) {
+        console.warn("Clerk publishable key has invalid format");
+      }
+      
+      console.warn("Rendering without Clerk authentication due to invalid key");
       return <RemixBrowser />;
     }
   } catch (e) {
