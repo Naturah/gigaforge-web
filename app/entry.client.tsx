@@ -6,138 +6,9 @@
 
 import * as React from "react";
 import { RemixBrowser } from "@remix-run/react";
-import { startTransition, StrictMode, Suspense, ErrorBoundary as ReactErrorBoundary } from "react";
+import { startTransition, StrictMode, Suspense } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/remix";
-
-// Simple error boundary component
-const ErrorFallback = ({ error }: { error: Error }) => {
-  console.error("React error caught by boundary:", error);
-  return (
-    <div style={{ 
-      padding: '20px',
-      margin: '20px',
-      border: '1px solid red',
-      borderRadius: '5px',
-      backgroundColor: '#ffeeee'
-    }}>
-      <h2 style={{ color: 'red' }}>Something went wrong</h2>
-      <pre style={{ padding: '10px', backgroundColor: '#333', color: 'white', overflow: 'auto' }}>
-        {error.message}
-      </pre>
-      <button onClick={() => window.location.reload()} style={{ 
-        padding: '10px',
-        marginTop: '10px',
-        backgroundColor: 'blue',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px'
-      }}>
-        Try reloading
-      </button>
-    </div>
-  );
-};
-
-// Error boundary wrapper
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Hydration error caught:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <ErrorFallback error={this.state.error!} />;
-    }
-    return this.props.children;
-  }
-}
-
-// Safe hydration with error boundaries
-const hydrate = () => {
-  console.log("Starting hydration...");
-  
-  // Check if window.ENV exists
-  console.log("Window.ENV available:", window.ENV ? "Yes" : "No");
-  console.log("Clerk publishable key:", window.ENV?.CLERK_PUBLISHABLE_KEY || "Not available");
-  
-  startTransition(() => {
-    try {
-      console.log("Attempting hydration...");
-      
-      // Extra-cautious approach with debugging
-      if (window.ENV?.CLERK_PUBLISHABLE_KEY) {
-        console.log("Using Clerk Provider for hydration");
-        
-        const AppWithClerk = (
-          <StrictMode>
-            <ErrorBoundary>
-              <Suspense fallback={<div>Loading...</div>}>
-                <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
-                  <RemixBrowser />
-                </ClerkProvider>
-              </Suspense>
-            </ErrorBoundary>
-          </StrictMode>
-        );
-        
-        hydrateRoot(document, AppWithClerk);
-      } else {
-        console.log("Skipping Clerk Provider due to missing key");
-        
-        const AppWithoutClerk = (
-          <StrictMode>
-            <ErrorBoundary>
-              <Suspense fallback={<div>Loading...</div>}>
-                <RemixBrowser />
-              </Suspense>
-            </ErrorBoundary>
-          </StrictMode>
-        );
-        
-        hydrateRoot(document, AppWithoutClerk);
-      }
-      
-      console.log("Hydration complete");
-    } catch (error) {
-      console.error("Fatal error during hydration attempt:", error);
-      
-      // Ultimate fallback - extremely minimal approach
-      try {
-        console.log("Attempting minimal fallback hydration");
-        hydrateRoot(
-          document,
-          <div>
-            <h1>Something went wrong</h1>
-            <p>The application encountered an error during initialization.</p>
-            <button onClick={() => window.location.reload()}>
-              Reload
-            </button>
-          </div>
-        );
-      } catch (finalError) {
-        console.error("Even minimal hydration failed:", finalError);
-        // At this point, manually inject content if all else fails
-        document.body.innerHTML = `
-          <div style="padding: 20px; margin: 20px; text-align: center;">
-            <h1>Fatal Application Error</h1>
-            <p>The application could not be loaded.</p>
-            <button onclick="window.location.reload()">Reload</button>
-          </div>
-        `;
-      }
-    }
-  });
-};
 
 // Add global type for ENV
 declare global {
@@ -149,13 +20,117 @@ declare global {
   }
 }
 
+// Simple error fallback component
+const ErrorFallback = ({ error }: { error: Error }) => {
+  console.error("React error caught by boundary:", error);
+  return (
+    <div style={{ 
+      padding: '20px',
+      margin: '20px',
+      borderRadius: '5px',
+      backgroundColor: '#111',
+      border: '1px solid #444',
+      color: '#fff'
+    }}>
+      <h2 style={{ color: '#f55' }}>Something went wrong</h2>
+      <p>The application encountered an error during initialization.</p>
+      <button onClick={() => window.location.reload()} style={{ 
+        padding: '10px',
+        marginTop: '10px',
+        backgroundColor: '#333',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px'
+      }}>
+        Try reloading
+      </button>
+    </div>
+  );
+};
+
 console.log("entry.client.tsx loaded, preparing to hydrate");
 
-// Check for requestIdleCallback
+// We're going to use a two-phase approach to avoid hydration errors
+// First render an empty shell that matches the server
+const renderApp = () => {
+  console.log("Starting initial hydration phase...");
+  
+  // Extract body content before hydration
+  const bodyContent = document.body.innerHTML;
+  
+  try {
+    // First perform a "silent" hydration with an empty app
+    // This resets React's expectations and avoids hydration mismatches
+    hydrateRoot(
+      document,
+      <Suspense fallback={null}>
+        <div id="app-root" />
+      </Suspense>
+    );
+    
+    console.log("Initial hydration phase complete, preparing real app...");
+    
+    // Wait a moment for the initial hydration to complete
+    setTimeout(() => {
+      console.log("Starting real app hydration...");
+      const appRoot = document.getElementById('app-root');
+      
+      if (appRoot) {
+        try {
+          const hasClerkKey = !!window.ENV?.CLERK_PUBLISHABLE_KEY;
+          console.log("Has Clerk key:", hasClerkKey);
+          
+          // Create the real app element
+          const App = hasClerkKey 
+            ? (
+              <StrictMode>
+                <Suspense fallback={<div>Loading application...</div>}>
+                  <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
+                    <RemixBrowser />
+                  </ClerkProvider>
+                </Suspense>
+              </StrictMode>
+            ) 
+            : (
+              <StrictMode>
+                <Suspense fallback={<div>Loading application...</div>}>
+                  <RemixBrowser />
+                </Suspense>
+              </StrictMode>
+            );
+            
+          // Replace the app-root content with our real app
+          const appRootElement = document.createElement('div');
+          appRoot.appendChild(appRootElement);
+          
+          // Render the real app into the app root
+          const root = hydrateRoot(appRootElement, App);
+          console.log("Real app hydration complete");
+        } catch (error) {
+          console.error("Error during real app hydration:", error);
+          appRoot.innerHTML = '';
+          const errorRoot = document.createElement('div');
+          appRoot.appendChild(errorRoot);
+          hydrateRoot(errorRoot, <ErrorFallback error={error as Error} />);
+        }
+      } else {
+        console.error("App root element not found");
+        document.body.innerHTML = '';
+        const errorRoot = document.createElement('div');
+        document.body.appendChild(errorRoot);
+        hydrateRoot(errorRoot, <ErrorFallback error={new Error("App root element not found")} />);
+      }
+    }, 100);
+  } catch (error) {
+    console.error("Fatal error during initial hydration:", error);
+    // Restore original content if initial hydration fails
+    document.body.innerHTML = bodyContent;
+  }
+};
+
+// Delay hydration to ensure the document is fully loaded
 if (window.requestIdleCallback) {
-  console.log("Using requestIdleCallback");
-  window.requestIdleCallback(hydrate);
+  window.requestIdleCallback(renderApp);
 } else {
-  console.log("Using setTimeout fallback");
-  window.setTimeout(hydrate, 1);
+  window.setTimeout(renderApp, 10);
 }
