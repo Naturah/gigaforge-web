@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import {
   Links,
   Meta,
@@ -51,9 +51,47 @@ export const loader: LoaderFunction = args => {
   }
 };
 
+// Custom error boundary for contents within the layout
+class ContentErrorBoundary extends React.Component<
+  {children: React.ReactNode}, 
+  {hasError: boolean, error: Error | null}
+> {
+  state = { hasError: false, error: null };
+  
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Error in route rendering:", error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 m-4 bg-black/40 backdrop-blur-lg border border-red-500/30 rounded-xl max-w-xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-red-400 mb-4">Something went wrong</h2>
+          <p className="text-gray-300 mb-6">An error occurred while rendering this content.</p>
+          <a
+            href="/"
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-colors inline-block"
+          >
+            Return to Home
+          </a>
+        </div>
+      );
+    }
+    
+    return this.props.children;
+  }
+}
+
 function App() {
   // Get ENV from loader
   const data = useLoaderData<{ ENV?: { CLERK_PUBLISHABLE_KEY?: string } }>();
+  
+  // Log what we're rendering
+  console.log("Rendering App, ENV available:", !!data.ENV);
   
   return (
     <html lang="en">
@@ -67,7 +105,9 @@ function App() {
         <div className="flex flex-col min-h-screen">
           <Nav />
           <div className="flex-grow">
-            <Outlet />
+            <ContentErrorBoundary>
+              <Outlet />
+            </ContentErrorBoundary>
           </div>
           <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
             <div className="container mx-auto px-4">
@@ -88,7 +128,10 @@ function App() {
         {/* Pass ENV to window for client hydration */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data?.ENV || {})}`
+            __html: `
+              window.ENV = ${JSON.stringify(data?.ENV || {})};
+              console.log("ENV injected into window:", window.ENV);
+            `
           }}
         />
         <Scripts />
@@ -102,6 +145,7 @@ export default typeof process.env.CLERK_PUBLISHABLE_KEY === 'string'
   ? ClerkApp(App)
   : App;
 
+// Keep the exported ErrorBoundary function for Remix root error handling
 export function ErrorBoundary() {
   const error = useRouteError();
 
