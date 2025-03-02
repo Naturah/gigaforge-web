@@ -3,6 +3,7 @@ import { UserButton } from "@clerk/remix";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { useState, useEffect } from "react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -30,15 +31,34 @@ export default function ProfilePage() {
   
   // Function to safely render UserButton with error handling
   const renderUserButton = () => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [hasError, setHasError] = useState(false);
+    
+    // Use effect to delay rendering until after hydration
+    useEffect(() => {
+      setIsLoaded(true);
+    }, []);
+    
+    // Don't try to render on server or before hydration
+    if (!isLoaded) {
+      return <div className="h-8 w-8 rounded-full bg-gray-700 animate-pulse"></div>;
+    }
+    
+    // If there was a previous error, show a fallback
+    if (hasError) {
+      return (
+        <div className="text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded-lg">
+          Account Settings
+        </div>
+      );
+    }
+    
     try {
       return <UserButton />;
     } catch (error) {
       console.error("Error rendering UserButton in profile:", error);
-      return (
-        <div className="text-sm text-red-400">
-          Auth component error
-        </div>
-      );
+      setHasError(true);
+      return <div className="h-8 w-8 rounded-full bg-gray-700"></div>;
     }
   };
   

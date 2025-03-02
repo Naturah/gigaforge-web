@@ -87,6 +87,31 @@ class ContentErrorBoundary extends React.Component<
   }
 }
 
+// Custom error boundary that specifically handles Clerk-related errors
+class ClerkErrorBoundary extends React.Component<
+  {children: React.ReactNode}, 
+  {hasError: boolean}
+> {
+  state = { hasError: false };
+  
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Clerk integration error:", error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      // Return a minimal version of the app without auth components
+      return this.props.children;
+    }
+    
+    return this.props.children;
+  }
+}
+
 function App() {
   // Get ENV from loader
   const data = useLoaderData<{ ENV?: { CLERK_PUBLISHABLE_KEY?: string } }>();
@@ -103,27 +128,31 @@ function App() {
         <Links />
       </head>
       <body className="bg-gradient-to-br from-gray-900 to-black min-h-screen text-white">
-        {/* Main application container - this will be targeted by the island architecture */}
-        <div id="remix-app-root" className="flex flex-col min-h-screen">
-          <Nav />
-          <div className="flex-grow">
-            <Outlet />
-          </div>
-          <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0">
-                  <p className="text-gray-400">© 2023 GigaForge. All rights reserved.</p>
-                </div>
-                <div className="flex space-x-4">
-                  <a href="#" className="text-gray-400 hover:text-white">Terms</a>
-                  <a href="#" className="text-gray-400 hover:text-white">Privacy</a>
-                  <a href="#" className="text-gray-400 hover:text-white">Contact</a>
+        {/* Main application container with error boundary */}
+        <ClerkErrorBoundary>
+          <div id="remix-app-root" className="flex flex-col min-h-screen">
+            <Nav />
+            <div className="flex-grow">
+              <ContentErrorBoundary>
+                <Outlet />
+              </ContentErrorBoundary>
+            </div>
+            <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
+              <div className="container mx-auto px-4">
+                <div className="flex flex-col md:flex-row justify-between items-center">
+                  <div className="mb-4 md:mb-0">
+                    <p className="text-gray-400">© 2023 GigaForge. All rights reserved.</p>
+                  </div>
+                  <div className="flex space-x-4">
+                    <a href="#" className="text-gray-400 hover:text-white">Terms</a>
+                    <a href="#" className="text-gray-400 hover:text-white">Privacy</a>
+                    <a href="#" className="text-gray-400 hover:text-white">Contact</a>
+                  </div>
                 </div>
               </div>
-            </div>
-          </footer>
-        </div>
+            </footer>
+          </div>
+        </ClerkErrorBoundary>
         <ScrollRestoration />
         {/* Pass ENV to window for client hydration */}
         <script

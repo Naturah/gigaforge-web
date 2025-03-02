@@ -1,5 +1,6 @@
 /**
  * Client-side rendering with Clerk authentication
+ * Using a progressive enhancement approach
  */
 
 import * as React from "react";
@@ -20,6 +21,32 @@ declare global {
 
 console.log("entry.client.tsx loaded");
 
+/**
+ * ErrorBoundary for Clerk initialization
+ */
+class ClerkErrorBoundary extends React.Component<
+  { children: React.ReactNode, fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error: Error) {
+    console.error("Error initializing Clerk:", error);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    
+    return this.props.children;
+  }
+}
+
 function hydrate() {
   startTransition(() => {
     // Get the publishable key from the window ENV
@@ -32,18 +59,40 @@ function hydrate() {
       console.warn("No Clerk publishable key found in window.ENV");
     }
     
-    // Always wrap with ClerkProvider - let the provider itself handle 
-    // the validation of the key rather than adding complex conditionals
-    hydrateRoot(
-      document,
+    // Two-phase mounting:
+    // 1. First, mount the app without Clerk for immediate UI rendering
+    // 2. Then, try to initialize Clerk with error boundaries
+    
+    const appWithoutClerk = (
       <StrictMode>
-        <ClerkProvider publishableKey={publishableKey}>
-          <RemixBrowser />
-        </ClerkProvider>
+        <RemixBrowser />
       </StrictMode>
     );
     
-    console.log("Client-side hydration complete");
+    const appWithClerk = (
+      <StrictMode>
+        <ClerkErrorBoundary fallback={appWithoutClerk}>
+          <ClerkProvider publishableKey={publishableKey}>
+            <RemixBrowser />
+          </ClerkProvider>
+        </ClerkErrorBoundary>
+      </StrictMode>
+    );
+    
+    try {
+      // Always attempt to render with Clerk, with a fallback if it fails
+      hydrateRoot(document, publishableKey ? appWithClerk : appWithoutClerk);
+      console.log("Client-side hydration complete");
+    } catch (error) {
+      console.error("Critical hydration error:", error);
+      // Last resort fallback if even the error boundary fails
+      try {
+        hydrateRoot(document, appWithoutClerk);
+        console.log("Fallback hydration complete");
+      } catch (fallbackError) {
+        console.error("Fatal: Even fallback hydration failed", fallbackError);
+      }
+    }
   });
 }
 

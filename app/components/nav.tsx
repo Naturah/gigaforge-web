@@ -1,10 +1,32 @@
 import { NavLink } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "./logo";
 import { UserButton, useAuth } from "@clerk/remix";
 
 // Safe UserButton component with error handling
 function SafeUserButton() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  
+  // Use effect to delay rendering until after hydration
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+  
+  // Don't try to render on server or before hydration
+  if (!isLoaded) {
+    return <div className="h-8 w-8 rounded-full bg-gray-700 animate-pulse"></div>;
+  }
+  
+  // If there was a previous error, show a sign in link instead
+  if (hasError) {
+    return (
+      <NavLink to="/sign-in" className="text-gray-200 hover:text-white transition-colors">
+        Sign In
+      </NavLink>
+    );
+  }
+  
   try {
     return (
       <UserButton 
@@ -23,7 +45,8 @@ function SafeUserButton() {
     );
   } catch (e) {
     console.error("Error rendering UserButton:", e);
-    return null;
+    setHasError(true);
+    return <div className="h-8 w-8 rounded-full bg-gray-700"></div>;
   }
 }
 
