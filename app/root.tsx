@@ -102,7 +102,8 @@ function App() {
         <Links />
       </head>
       <body className="bg-gradient-to-br from-gray-900 to-black min-h-screen text-white">
-        <div className="flex flex-col min-h-screen">
+        {/* Main application container - this will be targeted by the island architecture */}
+        <div id="remix-app-root" className="flex flex-col min-h-screen">
           <Nav />
           <div className="flex-grow">
             <ContentErrorBoundary>
