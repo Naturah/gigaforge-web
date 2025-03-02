@@ -27,16 +27,6 @@ export default function Nav() {
             Home
           </NavLink>
           <NavLink
-            to="/categories"
-            className={({ isActive }) =>
-              `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            Categories
-          </NavLink>
-          <NavLink
             to="/forges"
             className={({ isActive }) =>
               `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
@@ -150,17 +140,6 @@ export default function Nav() {
             }
           >
             Home
-          </NavLink>
-          <NavLink
-            to="/categories"
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) =>
-              `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            Categories
           </NavLink>
           <NavLink
             to="/forges"
