@@ -3,6 +3,30 @@ import { useState } from "react";
 import Logo from "./logo";
 import { UserButton, useAuth } from "@clerk/remix";
 
+// Safe UserButton component with error handling
+function SafeUserButton() {
+  try {
+    return (
+      <UserButton 
+        afterSignOutUrl="/"
+        appearance={{
+          elements: {
+            userButtonBox: "hover:opacity-80 transition-opacity",
+            userButtonTrigger: "focus:shadow-none",
+            userButtonPopoverCard: "bg-gray-900 border border-gray-700",
+            userButtonPopoverFooter: "border-gray-700",
+            userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-gray-800",
+            userButtonPopoverActionButtonText: "text-current",
+          }
+        }}
+      />
+    );
+  } catch (e) {
+    console.error("Error rendering UserButton:", e);
+    return null;
+  }
+}
+
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -50,27 +74,8 @@ export default function Nav() {
               }>
                 My Profile
               </NavLink>
-              {/* Wrapped in try/catch for safety */}
-              {try {
-                return (
-                  <UserButton 
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        userButtonBox: "hover:opacity-80 transition-opacity",
-                        userButtonTrigger: "focus:shadow-none",
-                        userButtonPopoverCard: "bg-gray-900 border border-gray-700",
-                        userButtonPopoverFooter: "border-gray-700",
-                        userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-gray-800",
-                        userButtonPopoverActionButtonText: "text-current",
-                      }
-                    }}
-                  />
-                );
-              } catch (e) {
-                console.error("Error rendering UserButton:", e);
-                return null;
-              }}
+              {/* Using the safe component instead of try/catch in JSX */}
+              <SafeUserButton />
             </>
           ) : (
             <div className="flex items-center space-x-4">
