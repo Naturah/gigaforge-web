@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
   useRouteError,
   isRouteErrorResponse,
+  useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 import { ClerkApp } from '@clerk/remix';
@@ -30,7 +31,16 @@ export const links: LinksFunction = () => [
 // Add Clerk's root loader
 export const loader: LoaderFunction = args => {
   try {
-    return rootAuthLoader(args);
+    return rootAuthLoader(args, 
+      ({ request }) => {
+        // Return ENV to be available on the client
+        return {
+          ENV: {
+            CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || ''
+          }
+        };
+      }
+    );
   } catch (error) {
     console.error("Error in rootAuthLoader:", error);
     // Return a fallback response that won't break the app
@@ -42,6 +52,9 @@ export const loader: LoaderFunction = args => {
 };
 
 function App() {
+  // Get ENV from loader
+  const data = useLoaderData<{ ENV?: { CLERK_PUBLISHABLE_KEY?: string } }>();
+  
   return (
     <html lang="en">
       <head>
@@ -72,6 +85,12 @@ function App() {
           </footer>
         </div>
         <ScrollRestoration />
+        {/* Pass ENV to window for client hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data?.ENV || {})}`
+          }}
+        />
         <Scripts />
       </body>
     </html>
