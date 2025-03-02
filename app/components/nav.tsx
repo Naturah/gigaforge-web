@@ -5,7 +5,15 @@ import { UserButton, useAuth } from "@clerk/remix";
 
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
-  const { userId } = useAuth();
+  
+  // Safely use useAuth - check if it actually exists in the window
+  let userId = null;
+  try {
+    const auth = useAuth();
+    userId = auth?.userId;
+  } catch (e) {
+    console.warn("Auth context not available", e);
+  }
 
   return (
     <nav className="shadow-xl sticky top-0 z-50 bg-black/40 backdrop-blur-lg border-b border-gray-700 py-3">

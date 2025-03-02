@@ -15,12 +15,31 @@ import Nav from "./components/nav";
 
 import styles from "./tailwind.css?url";
 
+// Check for required environment variables
+if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
+  console.warn(
+    "Missing Clerk environment variables. Authentication will not work properly. " +
+    "Make sure to add CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to your .env file."
+  );
+}
+
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ];
 
 // Add Clerk's root loader
-export const loader: LoaderFunction = args => rootAuthLoader(args);
+export const loader: LoaderFunction = args => {
+  try {
+    return rootAuthLoader(args);
+  } catch (error) {
+    console.error("Error in rootAuthLoader:", error);
+    // Return a fallback response that won't break the app
+    return { 
+      auth: { userId: null, sessionId: null, getToken: async () => null },
+      ENV: { CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || '' }
+    };
+  }
+};
 
 function App() {
   return (
@@ -60,7 +79,9 @@ function App() {
 }
 
 // Wrap the App component with ClerkApp
-export default ClerkApp(App);
+export default typeof process.env.CLERK_PUBLISHABLE_KEY === 'string' 
+  ? ClerkApp(App)
+  : App;
 
 export function ErrorBoundary() {
   const error = useRouteError();
