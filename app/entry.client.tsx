@@ -5,7 +5,7 @@
 
 import * as React from "react";
 import { RemixBrowser } from "@remix-run/react";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/remix";
 
@@ -20,6 +20,54 @@ declare global {
 }
 
 console.log("entry.client.tsx loaded");
+
+/**
+ * Safer wrapper for Clerk integration that includes error boundaries
+ */
+function SafeClerkApp() {
+  const [error, setError] = useState<Error | null>(null);
+  
+  // If there was an error rendering with Clerk, show the error or fallback
+  if (error) {
+    console.error("Error rendering with Clerk:", error);
+    return <RemixBrowser />;
+  }
+  
+  try {
+    // Only use Clerk if we actually have the key
+    if (window.ENV?.CLERK_PUBLISHABLE_KEY) {
+      return (
+        <ErrorCatcher onError={setError}>
+          <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
+            <RemixBrowser />
+          </ClerkProvider>
+        </ErrorCatcher>
+      );
+    } else {
+      console.warn("No Clerk publishable key found, rendering without Clerk");
+      return <RemixBrowser />;
+    }
+  } catch (e) {
+    console.error("Error in SafeClerkApp:", e);
+    return <RemixBrowser />;
+  }
+}
+
+/**
+ * Simple error boundary component
+ */
+class ErrorCatcher extends React.Component<{
+  children: React.ReactNode;
+  onError: (error: Error) => void;
+}> {
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+  
+  render() {
+    return this.props.children;
+  }
+}
 
 /**
  * Pure client-side rendering approach
@@ -92,54 +140,66 @@ function initializeClient() {
     
     // Short delay to ensure the browser has time to paint the loading indicator
     setTimeout(() => {
-      // Remove the loading indicator
-      if (loadingEl.parentNode) {
-        loadingEl.parentNode.removeChild(loadingEl);
-      }
-      
-      // Create a root for our app
-      const reactRoot = createRoot(rootContainer);
-      
-      // Render with or without ClerkProvider based on availability of key
-      if (hasClerkKey) {
-        console.log("Rendering with ClerkProvider");
-        reactRoot.render(
-          <Suspense fallback={<div>Loading application...</div>}>
-            <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
+      try {
+        // Remove the loading indicator
+        if (loadingEl.parentNode) {
+          loadingEl.parentNode.removeChild(loadingEl);
+        }
+        
+        // Create a root for our app
+        const reactRoot = createRoot(rootContainer);
+        
+        // Wrap everything in a general try-catch in case there's an error during rendering
+        try {
+          console.log("Rendering with SafeClerkApp wrapper");
+          
+          // Always use the SafeClerkApp which will handle errors within Clerk
+          reactRoot.render(
+            <Suspense fallback={<div>Loading application...</div>}>
+              <SafeClerkApp />
+            </Suspense>
+          );
+          
+          console.log("Client-side render complete");
+        } catch (renderError) {
+          console.error("Error during render:", renderError);
+          
+          // If there's an error rendering with SafeClerkApp, fall back to basic RemixBrowser
+          reactRoot.render(
+            <Suspense fallback={<div>Loading application...</div>}>
               <RemixBrowser />
-            </ClerkProvider>
-          </Suspense>
-        );
-      } else {
-        console.log("Rendering without ClerkProvider");
-        reactRoot.render(
-          <Suspense fallback={<div>Loading application...</div>}>
-            <RemixBrowser />
-          </Suspense>
-        );
+            </Suspense>
+          );
+          
+          console.log("Fallback render complete");
+        }
+      } catch (timeoutError) {
+        console.error("Error in setTimeout callback:", timeoutError);
+        displayErrorFallback(rootContainer, timeoutError);
       }
-      
-      console.log("Client-side render complete");
     }, 100);
   } catch (error) {
     console.error("Error during client-side rendering:", error);
-    
-    // Fallback content in case of rendering failure
-    rootContainer.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: white; background-color: #111; border: 1px solid #444; border-radius: 8px; margin: 20px;">
-        <h2 style="color: #f55">Failed to load application</h2>
-        <p>There was a problem initializing the application.</p>
-        <p style="color: #999; font-size: 12px; margin-top: 10px;">Error: ${error?.message || 'Unknown error'}</p>
-        <pre style="text-align: left; max-width: 500px; margin: 15px auto; overflow: auto; background: #222; padding: 10px; border-radius: 4px; font-size: 11px; color: #ddd;">
-          ${error?.stack?.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || 'No stack trace available'}
-        </pre>
-        <button onclick="window.location.reload()" 
-                style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px;">
-          Reload page
-        </button>
-      </div>
-    `;
+    displayErrorFallback(rootContainer, error);
   }
+}
+
+// Helper function to display error fallback UI
+function displayErrorFallback(container: HTMLElement, error: any) {
+  container.innerHTML = `
+    <div style="padding: 20px; text-align: center; color: white; background-color: #111; border: 1px solid #444; border-radius: 8px; margin: 20px;">
+      <h2 style="color: #f55">Failed to load application</h2>
+      <p>There was a problem initializing the application.</p>
+      <p style="color: #999; font-size: 12px; margin-top: 10px;">Error: ${error?.message || 'Unknown error'}</p>
+      <pre style="text-align: left; max-width: 500px; margin: 15px auto; overflow: auto; background: #222; padding: 10px; border-radius: 4px; font-size: 11px; color: #ddd;">
+        ${error?.stack?.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || 'No stack trace available'}
+      </pre>
+      <button onclick="window.location.reload()" 
+              style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px;">
+        Reload page
+      </button>
+    </div>
+  `;
 }
 
 // Start the process after a short delay to ensure the DOM is fully loaded
