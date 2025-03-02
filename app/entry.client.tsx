@@ -36,9 +36,19 @@ function SafeClerkApp() {
   try {
     // Only use Clerk if we actually have the key
     if (window.ENV?.CLERK_PUBLISHABLE_KEY) {
+      const publishableKey = window.ENV.CLERK_PUBLISHABLE_KEY;
+      
+      // Validate the publishable key format
+      if (!publishableKey || publishableKey.includes('your_dev_key') || publishableKey.trim() === '') {
+        console.warn("Invalid Clerk publishable key found, rendering without Clerk");
+        return <RemixBrowser />;
+      }
+      
+      console.log("Using Clerk with publishable key:", publishableKey.substring(0, 10) + "...");
+      
       return (
         <ErrorCatcher onError={setError}>
-          <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
+          <ClerkProvider publishableKey={publishableKey}>
             <RemixBrowser />
           </ClerkProvider>
         </ErrorCatcher>

@@ -1,0 +1,61 @@
+---
+description: Cloud Development Vercel-Github Workflow
+globs: 
+alwaysApply: false
+---
+
+## **Vercel-GitHub Cloud Development Workflow**
+
+- **Cloud-Only Development Strategy**
+- Development occurs directly in the GitHub-Vercel pipeline
+- No local development environment needed
+- All testing happens in deployed environments
+
+- **Deployment Environment Structure**
+- **Production**: Main branch deployment with production environment variables
+- **Pre-Production**: Preview deployments with pre-production environment variables
+- **Feature Branches**: Individual feature testing with development environment variables
+
+## **Environment Variable Management**
+
+- **Vercel Environment Configuration**
+- Configure environment variables separately for each environment (Production/Preview/Development)
+- Never store real credentials in the codebase or .env files
+- Set environment-specific values directly in Vercel dashboard
+- **Environment Variable Hierarchy**
+- **Production**: Use production-ready API keys and endpoints
+- **Pre-Production**: Use test API keys with production-like data
+- **Development**: Use sandbox/test API keys for feature testing
+- **Security Best Practices**
+- Only expose publishable keys to the client
+- Keep all secret keys server-side only
+- Validate environment variables before use with specific checks
+
+## **GitHub Workflow**
+
+- **Branch Strategy**
+- Feature branches for new development
+- Pull requests trigger preview deployments
+- Merge to main for production deployment
+- **Deployment Process**
+- Vercel automatically builds and deploys from GitHub
+- Each push generates a unique deployment URL
+- Preview deployments use pre-production environment variables
+
+## **Clerk Authentication Implementation**
+
+- **Environment Variable Configuration**
+- CLERK_PUBLISHABLE_KEY: Configured separately for each environment
+- CLERK_SECRET_KEY: Configured separately for each environment
+- Different Clerk instances/projects for pre-production vs production
+- **Initialization Safeguards**
+- Validate environment variables exist before using Clerk components
+- Graceful fallbacks if authentication is unavailable
+- Clear error messaging for misconfiguration
+
+## **Testing & Quality Assurance**
+
+- **Environment-Specific Testing**
+- Test authentication flows in preview deployments before production
+- Verify environment variables are correctly loaded in each environment
+- Check console logs for environment variable injection confirmation

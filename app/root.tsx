@@ -31,6 +31,25 @@ export const links: LinksFunction = () => [
 // Add Clerk's root loader
 export const loader: LoaderFunction = args => {
   try {
+    // Check if Clerk environment variables are valid
+    const hasValidClerkKeys = 
+      process.env.CLERK_PUBLISHABLE_KEY && 
+      process.env.CLERK_SECRET_KEY && 
+      !process.env.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
+      !process.env.CLERK_SECRET_KEY.includes('your_dev_key');
+    
+    if (!hasValidClerkKeys) {
+      console.warn(
+        "Invalid Clerk environment variables detected. Authentication will not work properly. " +
+        "Make sure to add valid CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to your .env file."
+      );
+      // Return a fallback response without Clerk
+      return { 
+        auth: { userId: null, sessionId: null, getToken: async () => null },
+        ENV: { CLERK_PUBLISHABLE_KEY: '' }
+      };
+    }
+    
     return rootAuthLoader(args, 
       ({ request }) => {
         // Return ENV to be available on the client
@@ -140,7 +159,8 @@ function App() {
 }
 
 // Wrap the App component with ClerkApp
-export default typeof process.env.CLERK_PUBLISHABLE_KEY === 'string' 
+export default typeof process.env.CLERK_PUBLISHABLE_KEY === 'string' && 
+          !process.env.CLERK_PUBLISHABLE_KEY.includes('your_dev_key')
   ? ClerkApp(App)
   : App;
 

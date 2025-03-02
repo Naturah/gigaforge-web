@@ -1,19 +1,33 @@
 import { NavLink } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "./logo";
 import { UserButton, useAuth } from "@clerk/remix";
 
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [authAvailable, setAuthAvailable] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   
-  // Safely use useAuth - check if it actually exists in the window
-  let userId = null;
-  try {
-    const auth = useAuth();
-    userId = auth?.userId;
-  } catch (e) {
-    console.warn("Auth context not available", e);
-  }
+  // Get auth outside of useEffect
+  const auth = useAuth();
+  
+  useEffect(() => {
+    // Check if Clerk is properly initialized
+    const hasValidClerkKey = window.ENV?.CLERK_PUBLISHABLE_KEY && 
+                            !window.ENV.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
+                            window.ENV.CLERK_PUBLISHABLE_KEY.trim() !== '';
+    
+    if (hasValidClerkKey) {
+      setAuthAvailable(true);
+      
+      // Use the auth from outside useEffect
+      try {
+        setUserId(auth?.userId || null);
+      } catch (e) {
+        console.warn("Auth context not available", e);
+      }
+    }
+  }, [auth?.userId]);
 
   return (
     <nav className="shadow-xl sticky top-0 z-50 bg-black/40 backdrop-blur-lg border-b border-gray-700 py-3">
@@ -23,195 +37,188 @@ export default function Nav() {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex gap-8 items-center">
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
+        <div className="hidden lg:flex items-center space-x-8">
+          <NavLink to="/" className={({isActive}) => 
+            isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
+          }>
             Home
           </NavLink>
-          <NavLink
-            to="/forges"
-            className={({ isActive }) =>
-              `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            Forges
+          <NavLink to="/forges" className={({isActive}) => 
+            isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
+          }>
+            3D Forges
           </NavLink>
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
+          <NavLink to="/about" className={({isActive}) => 
+            isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
+          }>
             About
           </NavLink>
           
-          {/* Authentication Links */}
-          <div className="ml-4 flex items-center">
-            {userId ? (
-              <div className="flex items-center gap-3">
-                <NavLink
-                  to="/profile"
-                  className={({ isActive }) =>
-                    `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                      isActive ? "text-white bg-gray-800" : ""
-                    }`
-                  }
-                >
-                  Profile
+          {/* Auth-dependent links */}
+          {authAvailable ? (
+            userId ? (
+              <>
+                <NavLink to="/profile" className={({isActive}) => 
+                  isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
+                }>
+                  My Profile
                 </NavLink>
-                <UserButton afterSignOutUrl="/" />
-              </div>
+                <UserButton 
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      userButtonBox: "hover:opacity-80 transition-opacity",
+                      userButtonTrigger: "focus:shadow-none",
+                      userButtonPopoverCard: "bg-gray-900 border border-gray-700",
+                      userButtonPopoverFooter: "border-gray-700",
+                      userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-gray-800",
+                      userButtonPopoverActionButtonText: "text-current",
+                    }
+                  }}
+                />
+              </>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-4">
                 <NavLink
                   to="/sign-in"
-                  className={({ isActive }) =>
-                    `text-gray-300 hover:text-white hover:bg-gray-800 py-2 px-3 rounded-lg transition-colors ${
-                      isActive ? "text-white bg-gray-800" : ""
-                    }`
-                  }
+                  className="text-gray-200 hover:text-white transition-colors"
                 >
                   Sign In
                 </NavLink>
                 <NavLink
                   to="/sign-up"
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 rounded-lg text-white hover:from-blue-700 hover:to-blue-800 transition-colors"
                 >
                   Sign Up
                 </NavLink>
               </div>
-            )}
-          </div>
+            )
+          ) : (
+            <div className="flex items-center space-x-4">
+              <NavLink
+                to="/sign-in"
+                className="text-gray-200 hover:text-white transition-colors"
+              >
+                Sign In
+              </NavLink>
+              <NavLink
+                to="/sign-up"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 rounded-lg text-white hover:from-blue-700 hover:to-blue-800 transition-colors"
+              >
+                Sign Up
+              </NavLink>
+            </div>
+          )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden">
-          <button
+        {/* Mobile menu button */}
+        <div className="lg:hidden">
+          <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-400 hover:text-white focus:outline-none"
+            className="text-gray-400 hover:text-white focus:outline-none focus:text-white"
           >
-            {isOpen ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            )}
+            <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
+              {isOpen ? (
+                <path fillRule="evenodd" clipRule="evenodd" d="M18.278 16.864a1 1 0 01-1.414 1.414l-4.829-4.828-4.828 4.828a1 1 0 01-1.414-1.414l4.828-4.829-4.828-4.828a1 1 0 011.414-1.414l4.829 4.828 4.828-4.828a1 1 0 111.414 1.414l-4.828 4.829 4.828 4.828z" />
+              ) : (
+                <path fillRule="evenodd" d="M4 5h16a1 1 0 010 2H4a1 1 0 110-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2z" />
+              )}
+            </svg>
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="md:hidden px-4 py-2 bg-black/80 backdrop-blur-lg border-t border-gray-800">
-          <NavLink
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) =>
-              `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/forges"
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) =>
-              `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            Forges
-          </NavLink>
-          <NavLink
-            to="/about"
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) =>
-              `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                isActive ? "text-white bg-gray-800" : ""
-              }`
-            }
-          >
-            About
-          </NavLink>
-          
-          {/* Mobile Authentication Links */}
-          {userId ? (
-            <>
+        <div className="lg:hidden pt-4 pb-3 border-t border-gray-700 mt-3">
+          <div className="container mx-auto px-4 space-y-1">
+            <NavLink
+              to="/"
+              onClick={() => setIsOpen(false)}
+              className={({isActive}) => 
+                isActive 
+                  ? "block px-3 py-2 rounded-md bg-blue-900 text-white font-medium"
+                  : "block px-3 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+              }
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/forges"
+              onClick={() => setIsOpen(false)}
+              className={({isActive}) => 
+                isActive 
+                  ? "block px-3 py-2 rounded-md bg-blue-900 text-white font-medium"
+                  : "block px-3 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+              }
+            >
+              3D Forges
+            </NavLink>
+            <NavLink
+              to="/about"
+              onClick={() => setIsOpen(false)}
+              className={({isActive}) => 
+                isActive 
+                  ? "block px-3 py-2 rounded-md bg-blue-900 text-white font-medium"
+                  : "block px-3 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+              }
+            >
+              About
+            </NavLink>
+            
+            {authAvailable && userId && (
               <NavLink
                 to="/profile"
                 onClick={() => setIsOpen(false)}
-                className={({ isActive }) =>
-                  `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                    isActive ? "text-white bg-gray-800" : ""
-                  }`
+                className={({isActive}) => 
+                  isActive 
+                    ? "block px-3 py-2 rounded-md bg-blue-900 text-white font-medium"
+                    : "block px-3 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
                 }
               >
-                Profile
+                My Profile
               </NavLink>
-              <div className="p-2">
-                <UserButton afterSignOutUrl="/" />
+            )}
+            
+            {/* Auth buttons */}
+            {authAvailable ? (
+              !userId && (
+                <div className="pt-4 pb-2 border-t border-gray-700 mt-2 flex flex-col space-y-2">
+                  <NavLink
+                    to="/sign-in"
+                    onClick={() => setIsOpen(false)}
+                    className="px-3 py-2 rounded-md text-gray-200 hover:text-white hover:bg-gray-800"
+                  >
+                    Sign In
+                  </NavLink>
+                  <NavLink
+                    to="/sign-up"
+                    onClick={() => setIsOpen(false)}
+                    className="px-3 py-2 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+                  >
+                    Sign Up
+                  </NavLink>
+                </div>
+              )
+            ) : (
+              <div className="pt-4 pb-2 border-t border-gray-700 mt-2 flex flex-col space-y-2">
+                <NavLink
+                  to="/sign-in"
+                  onClick={() => setIsOpen(false)}
+                  className="px-3 py-2 rounded-md text-gray-200 hover:text-white hover:bg-gray-800"
+                >
+                  Sign In
+                </NavLink>
+                <NavLink
+                  to="/sign-up"
+                  onClick={() => setIsOpen(false)}
+                  className="px-3 py-2 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+                >
+                  Sign Up
+                </NavLink>
               </div>
-            </>
-          ) : (
-            <>
-              <NavLink
-                to="/sign-in"
-                onClick={() => setIsOpen(false)}
-                className={({ isActive }) =>
-                  `block py-2 px-4 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg my-1 ${
-                    isActive ? "text-white bg-gray-800" : ""
-                  }`
-                }
-              >
-                Sign In
-              </NavLink>
-              <NavLink
-                to="/sign-up"
-                onClick={() => setIsOpen(false)}
-                className="block py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg my-1"
-              >
-                Sign Up
-              </NavLink>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
     </nav>
