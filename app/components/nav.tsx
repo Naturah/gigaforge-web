@@ -1,66 +1,24 @@
 import { NavLink } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Logo from "./logo";
 import { UserButton, useAuth } from "@clerk/remix";
 
-// Create a separate Auth component that safely uses Clerk hooks
-function AuthContent() {
-  // This component will only be rendered when ClerkProvider is available
-  const auth = useAuth();
-  return auth?.userId || null;
-}
-
-// Creates a wrapper that safely attempts to use Clerk hooks
-function SafeAuth({ children, onAuthStatus }: { 
-  children: (userId: string | null) => React.ReactNode,
-  onAuthStatus: (status: boolean) => void 
-}) {
-  try {
-    // Check if Clerk's context is available (this is synchronous)
-    const userId = <AuthContent />;
-    // If we get here, Clerk is available
-    onAuthStatus(true);
-    return <>{children(userId?.props || null)}</>;
-  } catch (e) {
-    // Clerk context not available
-    onAuthStatus(false);
-    return <>{children(null)}</>;
-  }
-}
-
 export default function Nav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [authAvailable, setAuthAvailable] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   
-  // Safe way to check if ClerkProvider is available and then use useAuth
-  const updateAuthStatus = (status: boolean) => {
-    setAuthAvailable(status);
-  };
-  
-  const updateUserId = (id: string | null) => {
-    setUserId(id);
-  };
-  
-  const hasValidClerkKey = typeof window !== 'undefined' && 
-    window.ENV?.CLERK_PUBLISHABLE_KEY && 
-    !window.ENV.CLERK_PUBLISHABLE_KEY.includes('your_dev_key') &&
-    window.ENV.CLERK_PUBLISHABLE_KEY.trim() !== '';
+  // Use try/catch block to safely handle Clerk auth
+  let userId = null;
+  try {
+    // Use the useAuth hook directly
+    const { userId: clerkUserId } = useAuth();
+    userId = clerkUserId;
+  } catch (error) {
+    console.error("Error using Clerk auth hook:", error);
+    // Keep userId as null
+  }
 
   return (
     <nav className="shadow-xl sticky top-0 z-50 bg-black/40 backdrop-blur-lg border-b border-gray-700 py-3">
-      {/* Attempt to use Clerk hooks safely */}
-      {hasValidClerkKey && (
-        <SafeAuth onAuthStatus={updateAuthStatus}>
-          {(uid) => {
-            if (uid !== userId) {
-              updateUserId(uid);
-            }
-            return null;
-          }}
-        </SafeAuth>
-      )}
-      
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
           <Logo small />
@@ -85,44 +43,35 @@ export default function Nav() {
           </NavLink>
           
           {/* Auth-dependent links */}
-          {authAvailable ? (
-            userId ? (
-              <>
-                <NavLink to="/profile" className={({isActive}) => 
-                  isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
-                }>
-                  My Profile
-                </NavLink>
-                <UserButton 
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      userButtonBox: "hover:opacity-80 transition-opacity",
-                      userButtonTrigger: "focus:shadow-none",
-                      userButtonPopoverCard: "bg-gray-900 border border-gray-700",
-                      userButtonPopoverFooter: "border-gray-700",
-                      userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-gray-800",
-                      userButtonPopoverActionButtonText: "text-current",
-                    }
-                  }}
-                />
-              </>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <NavLink
-                  to="/sign-in"
-                  className="text-gray-200 hover:text-white transition-colors"
-                >
-                  Sign In
-                </NavLink>
-                <NavLink
-                  to="/sign-up"
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 rounded-lg text-white hover:from-blue-700 hover:to-blue-800 transition-colors"
-                >
-                  Sign Up
-                </NavLink>
-              </div>
-            )
+          {userId ? (
+            <>
+              <NavLink to="/profile" className={({isActive}) => 
+                isActive ? "text-white font-medium" : "text-gray-400 hover:text-white transition-colors"
+              }>
+                My Profile
+              </NavLink>
+              {/* Wrapped in try/catch for safety */}
+              {try {
+                return (
+                  <UserButton 
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        userButtonBox: "hover:opacity-80 transition-opacity",
+                        userButtonTrigger: "focus:shadow-none",
+                        userButtonPopoverCard: "bg-gray-900 border border-gray-700",
+                        userButtonPopoverFooter: "border-gray-700",
+                        userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-gray-800",
+                        userButtonPopoverActionButtonText: "text-current",
+                      }
+                    }}
+                  />
+                );
+              } catch (e) {
+                console.error("Error rendering UserButton:", e);
+                return null;
+              }}
+            </>
           ) : (
             <div className="flex items-center space-x-4">
               <NavLink
@@ -196,7 +145,7 @@ export default function Nav() {
               About
             </NavLink>
             
-            {authAvailable && userId && (
+            {userId && (
               <NavLink
                 to="/profile"
                 onClick={() => setIsOpen(false)}
@@ -211,26 +160,7 @@ export default function Nav() {
             )}
             
             {/* Auth buttons */}
-            {authAvailable ? (
-              !userId && (
-                <div className="pt-4 pb-2 border-t border-gray-700 mt-2 flex flex-col space-y-2">
-                  <NavLink
-                    to="/sign-in"
-                    onClick={() => setIsOpen(false)}
-                    className="px-3 py-2 rounded-md text-gray-200 hover:text-white hover:bg-gray-800"
-                  >
-                    Sign In
-                  </NavLink>
-                  <NavLink
-                    to="/sign-up"
-                    onClick={() => setIsOpen(false)}
-                    className="px-3 py-2 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
-                  >
-                    Sign Up
-                  </NavLink>
-                </div>
-              )
-            ) : (
+            {!userId && (
               <div className="pt-4 pb-2 border-t border-gray-700 mt-2 flex flex-col space-y-2">
                 <NavLink
                   to="/sign-in"

@@ -3,6 +3,7 @@ description: Cloud Development Vercel-Github Workflow
 globs: 
 alwaysApply: false
 ---
+Cloud Development Vercel-Github Workflow
 
 ## **Vercel-GitHub Cloud Development Workflow**
 
@@ -10,7 +11,6 @@ alwaysApply: false
 - Development occurs directly in the GitHub-Vercel pipeline
 - No local development environment needed
 - All testing happens in deployed environments
-
 - **Deployment Environment Structure**
 - **Production**: Main branch deployment with production environment variables
 - **Pre-Production**: Preview deployments with pre-production environment variables
@@ -36,7 +36,7 @@ alwaysApply: false
 - **Branch Strategy**
 - Feature branches for new development
 - Pull requests trigger preview deployments
-- Merge to main for production deployment
+
 - **Deployment Process**
 - Vercel automatically builds and deploys from GitHub
 - Each push generates a unique deployment URL

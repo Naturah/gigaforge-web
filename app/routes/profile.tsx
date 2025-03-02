@@ -28,12 +28,26 @@ export const loader: LoaderFunction = async (args) => {
 export default function ProfilePage() {
   const { userId } = useLoaderData<typeof loader>();
   
+  // Function to safely render UserButton with error handling
+  const renderUserButton = () => {
+    try {
+      return <UserButton />;
+    } catch (error) {
+      console.error("Error rendering UserButton in profile:", error);
+      return (
+        <div className="text-sm text-red-400">
+          Auth component error
+        </div>
+      );
+    }
+  };
+  
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My Profile</h1>
-          <UserButton />
+          {renderUserButton()}
         </div>
         
         <div className="bg-black/30 backdrop-blur-md p-8 rounded-xl border border-gray-800">
