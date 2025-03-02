@@ -29,17 +29,20 @@ export default function SignInPage() {
             appearance={{
               elements: {
                 formButtonPrimary: 
-                  "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white",
+                  "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white",
                 card: "bg-transparent shadow-none",
                 headerTitle: "hidden",
                 headerSubtitle: "hidden",
                 socialButtonsBlockButton: 
-                  "border border-gray-700 bg-black/30 hover:bg-black/50",
+                  "border border-gray-600 bg-gray-900/70 hover:bg-gray-800 text-white",
                 formFieldInput: 
-                  "bg-black/30 border border-gray-700 text-white",
-                dividerLine: "bg-gray-700",
-                dividerText: "text-gray-400",
-                footer: "hidden"
+                  "bg-gray-900/70 border border-gray-600 text-white placeholder-gray-400",
+                formFieldLabel: "text-gray-200",
+                dividerLine: "bg-gray-600",
+                dividerText: "text-gray-300",
+                footer: "hidden",
+                formFieldErrorText: "text-red-400",
+                formFieldAction: "text-blue-400 hover:text-blue-300"
               }
             }}
           />

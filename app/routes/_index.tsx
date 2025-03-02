@@ -4,8 +4,8 @@ import Logo from "../components/logo";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "GigaForge - 3D Printed Products" },
-    { name: "description", content: "Explore our 3D printed products!" },
+    { title: "GigaForge - Guided 3D Printing Journeys" },
+    { name: "description", content: "Join our Forges - guided 3D printing projects to build amazing creations while mastering new skills." },
   ];
 };
 
@@ -71,17 +71,17 @@ export default function Index() {
       {/* Hero Section */}
       <div className="mb-16 mt-8 text-center">
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-          3D Printed Products for Every Need
+          Guided 3D Printing Journeys
         </h1>
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Discover our collection of high-quality 3D printed products, from home decor to collectables.
+          Join our Forges - guided projects that help you build amazing 3D printed creations while mastering new skills.
         </p>
         <div className="flex justify-center space-x-4">
           <Link 
-            to="/categories/home-decor" 
+            to="/forges" 
             className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:from-cyan-600 hover:to-blue-700 transition-colors shadow-lg shadow-cyan-500/20"
           >
-            Shop Now
+            Explore Forges
           </Link>
           <Link 
             to="/about" 
