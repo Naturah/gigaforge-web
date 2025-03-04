@@ -1,0 +1,37 @@
+/** @type {import('@remix-run/dev').AppConfig} */
+module.exports = {
+  ignoredRouteFiles: ["**/.*"],
+  serverModuleFormat: "cjs",
+  serverDependenciesToBundle: [
+    "marked",
+    /^rehype.*/,
+    /^remark.*/,
+    /^unified.*/,
+    /^unist.*/,
+    /^hast.*/,
+    /^bail.*/,
+    /^trough.*/,
+    /^mdast.*/,
+    /^micromark.*/,
+    /^decode.*/,
+    /^character.*/,
+    /^property.*/,
+    /^space.*/,
+    /^comma.*/,
+    /^react-markdown$/,
+    /^vfile.*/,
+    "@clerk/remix",
+  ],
+  // This is your public URL where your app will be deployed
+  publicPath: "/build/",
+  serverBuildPath: "build/index.js",
+  assetsBuildDirectory: "public/build",
+  future: {
+    v2_dev: true,
+    v2_errorBoundary: true,
+    v2_headers: true,
+    v2_meta: true,
+    v2_normalizeFormMethod: true,
+    v2_routeConvention: true,
+  },
+}; 
