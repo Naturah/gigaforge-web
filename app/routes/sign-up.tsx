@@ -29,6 +29,7 @@ export default function SignUpPage() {
             signInUrl="/sign-in"
             fallbackRedirectUrl="/onboarding"
             appearance={{
+              baseTheme: "dark",
               elements: {
                 formButtonPrimary: 
                   "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white",
@@ -37,6 +38,7 @@ export default function SignUpPage() {
                 headerSubtitle: "hidden",
                 socialButtonsBlockButton: 
                   "border border-gray-600 bg-gray-900/70 hover:bg-gray-800 text-white",
+                socialButtonsProviderIcon__google: "text-white",
                 formFieldInput: 
                   "bg-gray-900/70 border border-gray-600 text-white placeholder-gray-400",
                 formFieldLabel: "text-gray-200",
@@ -44,9 +46,12 @@ export default function SignUpPage() {
                 dividerText: "text-gray-300",
                 footer: "hidden",
                 formFieldErrorText: "text-red-400",
-                formFieldAction: "text-blue-400 hover:text-blue-300"
+                formFieldAction: "text-blue-400 hover:text-blue-300",
+                otpCodeFieldInput: "bg-gray-900 border border-gray-600 text-white"
               }
             }}
+            oauthCallbackUrl={window.location.origin + "/sso-callback"}
+            socialButtonsVariant="iconButton"
           />
         </div>
         
