@@ -17,10 +17,15 @@ import Nav from "./components/nav";
 import styles from "./tailwind.css?url";
 
 // Check for required environment variables
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
+const isStaging = process.env.NODE_ENV === 'staging';
+
 if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
-  console.warn(
-    "Missing Clerk environment variables. Authentication will not work properly. " +
-    "Make sure to add CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to your .env file."
+  console.error(
+    `Missing Clerk environment variables in ${process.env.NODE_ENV} environment. ` +
+    "Authentication will not work properly. " +
+    "Make sure to add CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to your environment."
   );
 }
 
@@ -32,13 +37,20 @@ export const links: LinksFunction = () => [
 export const loader: LoaderFunction = args => 
   rootAuthLoader(args, ({ request }) => {
     const publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
-    if (!publishableKey) {
-      console.error("Missing Clerk publishable key");
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    
+    if (!publishableKey || !secretKey) {
+      console.error(
+        `Missing Clerk keys in ${process.env.NODE_ENV} environment. ` +
+        `Publishable key present: ${!!publishableKey}, ` +
+        `Secret key present: ${!!secretKey}`
+      );
     }
     
     return {
       ENV: {
-        CLERK_PUBLISHABLE_KEY: publishableKey || ''
+        CLERK_PUBLISHABLE_KEY: publishableKey || '',
+        NODE_ENV: process.env.NODE_ENV
       }
     };
   });
