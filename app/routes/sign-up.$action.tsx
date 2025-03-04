@@ -1,28 +1,29 @@
 import { SignUp } from "@clerk/remix";
-import type { MetaFunction } from "@remix-run/node";
-import Logo from "~/components/logo";
+import type { LoaderFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: "Sign Up | GigaForge" },
-    { name: "description", content: "Create your GigaForge account" }
-  ];
+// Handle all subroutes of sign-up, including verify-email-address
+export const loader: LoaderFunction = ({ params }) => {
+  // Log the params to help with debugging
+  console.log("Sign-up action params:", params);
+  
+  const { action } = params;
+  
+  // Validate the action parameter
+  if (!action || !["verify-email-address", "continue"].includes(action)) {
+    // Redirect invalid paths back to the main sign-up page
+    return redirect("/sign-up");
+  }
+  
+  // Continue with the request, letting Clerk handle it
+  return null;
 };
 
-export default function SignUpPage() {
+export default function SignUpAction() {
   return (
     <div className="flex flex-col justify-center items-center py-12">
-      <div className="w-full max-w-md text-center mb-6">
-        <Logo />
-      </div>
-      
       <div className="w-full max-w-md">
         <div className="bg-black/30 backdrop-blur-md p-8 rounded-xl border border-gray-800 shadow-2xl">
-          <div className="mb-6 pb-6 border-b border-gray-800">
-            <h1 className="text-2xl font-bold mb-2">Join GigaForge</h1>
-            <p className="text-gray-400">Create an account to start your 3D printing journey</p>
-          </div>
-          
           <SignUp 
             routing="path" 
             path="/sign-up"
@@ -51,12 +52,6 @@ export default function SignUpPage() {
               }
             }}
           />
-        </div>
-        
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Already have an account? <a href="/sign-in" className="text-blue-400 hover:text-blue-300">Sign in</a>
-          </p>
         </div>
       </div>
     </div>
