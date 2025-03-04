@@ -10,7 +10,7 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction, LoaderFunction } from "@remix-run/node";
-import { ClerkApp, ClerkProvider } from '@clerk/remix';
+import { ClerkApp } from '@clerk/remix';
 import { rootAuthLoader } from '@clerk/remix/ssr.server';
 import Nav from "./components/nav";
 
@@ -33,56 +33,19 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ];
 
-// Try to use Clerk's root loader, but don't crash if it fails
-export const loader: LoaderFunction = async (args) => {
-  try {
-    return await rootAuthLoader(args, ({ request }) => {
-      return {
-        ENV: {
-          CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || ''
-        }
-      };
-    });
-  } catch (error) {
-    console.error("Error in rootAuthLoader:", error);
+export const loader: LoaderFunction = args => 
+  rootAuthLoader(args, ({ request }) => {
     return {
       ENV: {
-        CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || ''
+        CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
       }
     };
-  }
-};
-
-// Custom error boundary for Clerk components
-class ClerkErrorBoundary extends React.Component<
-  {children: React.ReactNode, fallback: React.ReactNode}, 
-  {hasError: boolean}
-> {
-  state = { hasError: false };
-  
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  
-  componentDidCatch(error: Error) {
-    console.error("Error in ClerkProvider:", error);
-  }
-  
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    
-    return this.props.children;
-  }
-}
+  });
 
 function App() {
   const data = useLoaderData<typeof loader>();
-  const publishableKey = data.ENV.CLERK_PUBLISHABLE_KEY;
   
-  // Create layout without Clerk as fallback
-  const layout = (
+  return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
@@ -105,40 +68,6 @@ function App() {
       </body>
     </html>
   );
-  
-  // If we have a publishable key, try to wrap with ClerkProvider
-  if (publishableKey) {
-    return (
-      <html lang="en">
-        <head>
-          <meta charSet="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <Meta />
-          <Links />
-        </head>
-        <body className="bg-black text-white">
-          <ClerkErrorBoundary fallback={<>{layout.props.children}</>}>
-            <ClerkProvider publishableKey={publishableKey}>
-              <Nav />
-              <main className="min-h-screen">
-                <Outlet />
-              </main>
-            </ClerkProvider>
-          </ClerkErrorBoundary>
-          <ScrollRestoration />
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
-            }}
-          />
-          <Scripts />
-        </body>
-      </html>
-    );
-  }
-  
-  // Fallback to layout without Clerk if no publishable key
-  return layout;
 }
 
 export function ErrorBoundary() {
@@ -178,5 +107,4 @@ export function ErrorBoundary() {
   );
 }
 
-// Wrap the App component with ClerkApp
 export default ClerkApp(App);
