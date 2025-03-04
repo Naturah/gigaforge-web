@@ -27,8 +27,7 @@ export default function SignUpPage() {
             routing="path" 
             path="/sign-up"
             signInUrl="/sign-in"
-            redirectUrl="/onboarding"
-            afterSignUpUrl="/onboarding"
+            fallbackRedirectUrl="/onboarding"
             appearance={{
               elements: {
                 formButtonPrimary: 
