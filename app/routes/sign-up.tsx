@@ -57,7 +57,10 @@ export default function SignUpPage() {
           ) : (
             <SignUp 
               routing="path" 
-              path="/sign-up" 
+              path="/sign-up"
+              afterSignUpUrl="/onboarding"
+              redirectUrl="/onboarding"
+              signInUrl="/sign-in"
               appearance={{
                 elements: {
                   formButtonPrimary: 
