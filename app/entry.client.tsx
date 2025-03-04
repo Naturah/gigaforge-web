@@ -12,8 +12,8 @@ import { ClerkProvider } from "@clerk/remix";
 // Global type for ENV
 declare global {
   interface Window {
-    ENV: {
-      CLERK_PUBLISHABLE_KEY: string;
+    ENV?: {
+      CLERK_PUBLISHABLE_KEY?: string;
     };
   }
 }
@@ -48,19 +48,42 @@ class ClerkErrorBoundary extends React.Component<
 
 function hydrate() {
   startTransition(() => {
-    if (!window.ENV?.CLERK_PUBLISHABLE_KEY) {
+    const publishableKey = window.ENV?.CLERK_PUBLISHABLE_KEY;
+    
+    if (!publishableKey) {
       console.warn("No Clerk publishable key found in window.ENV");
-      return;
     }
-
-    hydrateRoot(
-      document,
+    
+    // Create fallback app without Clerk
+    const fallbackApp = (
       <StrictMode>
-        <ClerkProvider publishableKey={window.ENV.CLERK_PUBLISHABLE_KEY}>
-          <RemixBrowser />
-        </ClerkProvider>
+        <RemixBrowser />
       </StrictMode>
     );
+    
+    // Create app with Clerk if we have a publishable key
+    const appWithClerk = publishableKey ? (
+      <StrictMode>
+        <ClerkErrorBoundary fallback={fallbackApp}>
+          <ClerkProvider publishableKey={publishableKey}>
+            <RemixBrowser />
+          </ClerkProvider>
+        </ClerkErrorBoundary>
+      </StrictMode>
+    ) : fallbackApp;
+    
+    try {
+      hydrateRoot(document, appWithClerk);
+      console.log("Client-side hydration complete");
+    } catch (error) {
+      console.error("Critical hydration error:", error);
+      // Last resort fallback
+      try {
+        hydrateRoot(document, fallbackApp);
+      } catch (fallbackError) {
+        console.error("Fatal: Even fallback hydration failed", fallbackError);
+      }
+    }
   });
 }
 

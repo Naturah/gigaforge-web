@@ -15,6 +15,21 @@ import { ClerkApp } from "@clerk/remix";
 
 const ABORT_DELAY = 5_000;
 
+// Try to wrap with ClerkApp, but don't fail if it doesn't work
+function wrapWithClerk(jsx: React.ReactNode): React.ReactNode {
+  if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
+    console.warn("Missing Clerk keys, skipping Clerk initialization");
+    return jsx;
+  }
+  
+  try {
+    return ClerkApp(jsx);
+  } catch (error) {
+    console.error("Error initializing ClerkApp:", error);
+    return jsx;
+  }
+}
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -48,39 +63,42 @@ function handleBotRequest(
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
-    const { pipe, abort } = renderToPipeableStream(
+    
+    // For bots, don't use Clerk to avoid any issues
+    const jsx = (
       <RemixServer
         context={remixContext}
         url={request.url}
         abortDelay={ABORT_DELAY}
-      />,
-      {
-        onAllReady() {
-          shellRendered = true;
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            })
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          // Log streaming errors
-          console.error(error);
-        },
-      }
+      />
     );
+    
+    const { pipe, abort } = renderToPipeableStream(jsx, {
+      onAllReady() {
+        shellRendered = true;
+        const body = new PassThrough();
+        const stream = createReadableStreamFromReadable(body);
+
+        responseHeaders.set("Content-Type", "text/html");
+
+        resolve(
+          new Response(stream, {
+            headers: responseHeaders,
+            status: responseStatusCode,
+          })
+        );
+
+        pipe(body);
+      },
+      onShellError(error: unknown) {
+        reject(error);
+      },
+      onError(error: unknown) {
+        responseStatusCode = 500;
+        // Log streaming errors
+        console.error(error);
+      },
+    });
 
     setTimeout(abort, ABORT_DELAY);
   });
@@ -94,41 +112,45 @@ function handleBrowserRequest(
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
-    const { pipe, abort } = renderToPipeableStream(
-      ClerkApp(
-        <RemixServer
-          context={remixContext}
-          url={request.url}
-          abortDelay={ABORT_DELAY}
-        />
-      ),
-      {
-        onShellReady() {
-          shellRendered = true;
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            })
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          // Log streaming errors
-          console.error(error);
-        },
-      }
+    
+    // Create base JSX
+    const jsx = (
+      <RemixServer
+        context={remixContext}
+        url={request.url}
+        abortDelay={ABORT_DELAY}
+      />
     );
+    
+    // Try to wrap with Clerk, but don't fail if it doesn't work
+    const wrappedJsx = wrapWithClerk(jsx);
+    
+    const { pipe, abort } = renderToPipeableStream(wrappedJsx, {
+      onShellReady() {
+        shellRendered = true;
+        const body = new PassThrough();
+        const stream = createReadableStreamFromReadable(body);
+
+        responseHeaders.set("Content-Type", "text/html");
+
+        resolve(
+          new Response(stream, {
+            headers: responseHeaders,
+            status: responseStatusCode,
+          })
+        );
+
+        pipe(body);
+      },
+      onShellError(error: unknown) {
+        reject(error);
+      },
+      onError(error: unknown) {
+        responseStatusCode = 500;
+        // Log streaming errors
+        console.error(error);
+      },
+    });
 
     setTimeout(abort, ABORT_DELAY);
   });
