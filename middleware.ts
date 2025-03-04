@@ -1,4 +1,6 @@
-import { authMiddleware } from "@clerk/remix/ssr.server";
+import { withClerkMiddleware } from "@clerk/nextjs/edge";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
@@ -19,26 +21,46 @@ const ignoredRoutes = [
   "/favicon.ico",
 ];
 
-export default authMiddleware({
-  publicRoutes,
-  ignoredRoutes,
-  afterAuth(auth, req) {
-    // Add security headers
-    const headers = new Headers();
-    headers.set('X-Frame-Options', 'DENY');
-    headers.set('X-Content-Type-Options', 'nosniff');
-    headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    headers.set(
-      'Content-Security-Policy',
-      "default-src 'self'; img-src 'self' https://img.clerk.com data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.com; style-src 'self' 'unsafe-inline' https://clerk.com;"
-    );
+function isPublic(path: string) {
+  return publicRoutes.some(
+    (publicRoute) => path.match(new RegExp(`^${publicRoute.replace(/\*/g, '.*')}$`))
+  );
+}
 
-    return new Response(null, {
-      status: 200,
-      headers
-    });
+function isIgnored(path: string) {
+  return ignoredRoutes.some(
+    (ignoredRoute) => path.match(new RegExp(`^${ignoredRoute.replace(/\*/g, '.*')}$`))
+  );
+}
+
+export default withClerkMiddleware((request: NextRequest) => {
+  const path = request.nextUrl.pathname;
+
+  if (isPublic(path) || isIgnored(path)) {
+    return addSecurityHeaders(NextResponse.next());
   }
+
+  // If the user is not signed in and the route is private, redirect them to sign in
+  const { userId } = request.auth;
+  if (!userId) {
+    const signInUrl = new URL('/sign-in', request.url);
+    signInUrl.searchParams.set('redirect_url', request.url);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  return addSecurityHeaders(NextResponse.next());
 });
+
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; img-src 'self' https://img.clerk.com data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.com; style-src 'self' 'unsafe-inline' https://clerk.com;"
+  );
+  return response;
+}
 
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
