@@ -28,29 +28,20 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ];
 
-// Add Clerk's root loader
-export const loader: LoaderFunction = args => {
-  try {
-    // Using rootAuthLoader directly without complex conditional logic
-    return rootAuthLoader(args, 
-      ({ request }) => {
-        // Return ENV to be available on the client
-        return {
-          ENV: {
-            CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || ''
-          }
-        };
+// Use Clerk's root loader
+export const loader: LoaderFunction = args => 
+  rootAuthLoader(args, ({ request }) => {
+    const publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      console.error("Missing Clerk publishable key");
+    }
+    
+    return {
+      ENV: {
+        CLERK_PUBLISHABLE_KEY: publishableKey || ''
       }
-    );
-  } catch (error) {
-    console.error("Error in rootAuthLoader:", error);
-    // Return a fallback response that won't break the app
-    return { 
-      auth: { userId: null, sessionId: null, getToken: async () => null },
-      ENV: { CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || '' }
     };
-  }
-};
+  });
 
 // Custom error boundary for contents within the layout
 class ContentErrorBoundary extends React.Component<
@@ -113,11 +104,7 @@ class ClerkErrorBoundary extends React.Component<
 }
 
 function App() {
-  // Get ENV from loader
-  const data = useLoaderData<{ ENV?: { CLERK_PUBLISHABLE_KEY?: string } }>();
-  
-  // Log what we're rendering
-  console.log("Rendering App, ENV available:", !!data.ENV);
+  const data = useLoaderData<typeof loader>();
   
   return (
     <html lang="en">
@@ -128,42 +115,33 @@ function App() {
         <Links />
       </head>
       <body className="bg-gradient-to-br from-gray-900 to-black min-h-screen text-white">
-        {/* Main application container with error boundary */}
-        <ClerkErrorBoundary>
-          <div id="remix-app-root" className="flex flex-col min-h-screen">
-            <Nav />
-            <div className="flex-grow">
-              <ContentErrorBoundary>
-                <Outlet />
-              </ContentErrorBoundary>
-            </div>
-            <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
-              <div className="container mx-auto px-4">
-                <div className="flex flex-col md:flex-row justify-between items-center">
-                  <div className="mb-4 md:mb-0">
-                    <p className="text-gray-400">© 2023 GigaForge. All rights reserved.</p>
-                  </div>
-                  <div className="flex space-x-4">
-                    <a href="#" className="text-gray-400 hover:text-white">Terms</a>
-                    <a href="#" className="text-gray-400 hover:text-white">Privacy</a>
-                    <a href="#" className="text-gray-400 hover:text-white">Contact</a>
-                  </div>
+        <div className="flex flex-col min-h-screen">
+          <Nav />
+          <div className="flex-grow">
+            <Outlet />
+          </div>
+          <footer className="bg-black/60 backdrop-blur-lg border-t border-gray-800 py-6 mt-16">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <div className="mb-4 md:mb-0">
+                  <p className="text-gray-400">© 2023 GigaForge. All rights reserved.</p>
+                </div>
+                <div className="flex space-x-4">
+                  <a href="#" className="text-gray-400 hover:text-white">Terms</a>
+                  <a href="#" className="text-gray-400 hover:text-white">Privacy</a>
+                  <a href="#" className="text-gray-400 hover:text-white">Contact</a>
                 </div>
               </div>
-            </footer>
-          </div>
-        </ClerkErrorBoundary>
+            </div>
+          </footer>
+        </div>
         <ScrollRestoration />
-        {/* Pass ENV to window for client hydration */}
+        <Scripts />
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              window.ENV = ${JSON.stringify(data?.ENV || {})};
-              console.log("ENV injected into window:", window.ENV);
-            `
+            __html: `window.ENV = ${JSON.stringify(data.ENV)}`
           }}
         />
-        <Scripts />
       </body>
     </html>
   );
