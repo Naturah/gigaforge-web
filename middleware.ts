@@ -1,6 +1,5 @@
-import { withClerkMiddleware } from "@clerk/nextjs/edge";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { createRemixRequestHandler } from '@remix-run/server-runtime';
+import { getAuth } from '@clerk/remix/ssr.server';
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
@@ -33,33 +32,42 @@ function isIgnored(path: string) {
   );
 }
 
-export default withClerkMiddleware((request: NextRequest) => {
-  const path = request.nextUrl.pathname;
+export default async function middleware(request: Request) {
+  const url = new URL(request.url);
+  const path = url.pathname;
 
   if (isPublic(path) || isIgnored(path)) {
-    return addSecurityHeaders(NextResponse.next());
+    return addSecurityHeaders(new Response(null, { status: 200 }));
   }
 
-  // If the user is not signed in and the route is private, redirect them to sign in
-  const { userId } = request.auth;
-  if (!userId) {
-    const signInUrl = new URL('/sign-in', request.url);
-    signInUrl.searchParams.set('redirect_url', request.url);
-    return NextResponse.redirect(signInUrl);
+  try {
+    const { userId } = await getAuth(request);
+    if (!userId) {
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('redirect_url', request.url);
+      return Response.redirect(signInUrl);
+    }
+    return addSecurityHeaders(new Response(null, { status: 200 }));
+  } catch (error) {
+    console.error('Auth error:', error);
+    return Response.redirect(new URL('/sign-in', request.url));
   }
+}
 
-  return addSecurityHeaders(NextResponse.next());
-});
-
-function addSecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
+function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set(
     'Content-Security-Policy',
     "default-src 'self'; img-src 'self' https://img.clerk.com data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.com; style-src 'self' 'unsafe-inline' https://clerk.com;"
   );
-  return response;
+
+  return new Response(response.body, {
+    status: response.status,
+    headers
+  });
 }
 
 export const config = {
