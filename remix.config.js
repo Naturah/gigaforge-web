@@ -20,7 +20,6 @@ module.exports = {
     /^comma.*/,
     /^react-markdown$/,
     /^vfile.*/,
-    "@clerk/remix",
   ],
   // This is your public URL where your app will be deployed
   publicPath: "/build/",
@@ -34,4 +33,4 @@ module.exports = {
     v2_normalizeFormMethod: true,
     v2_routeConvention: true,
   },
-}; 
+};

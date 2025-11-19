@@ -1,5 +1,5 @@
 /**
- * Client-side rendering with Clerk authentication
+ * Client-side rendering entry point
  * Using a progressive enhancement approach
  */
 

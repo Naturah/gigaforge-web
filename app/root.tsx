@@ -7,43 +7,17 @@ import {
   ScrollRestoration,
   useRouteError,
   isRouteErrorResponse,
-  useLoaderData,
 } from "@remix-run/react";
-import type { LinksFunction, LoaderFunction } from "@remix-run/node";
-import { ClerkApp } from '@clerk/remix';
-import { rootAuthLoader } from '@clerk/remix/ssr.server';
+import type { LinksFunction } from "@remix-run/node";
 import Nav from "./components/nav";
 
 import styles from "./tailwind.css?url";
-
-// Check for required environment variables
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
-
-if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
-  console.error(
-    `Missing Clerk environment variables in ${process.env.NODE_ENV} environment. ` +
-    "Authentication will not work properly. " +
-    "Make sure to add CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to your environment."
-  );
-}
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ];
 
-export const loader: LoaderFunction = args => 
-  rootAuthLoader(args, ({ request }) => {
-    return {
-      ENV: {
-        CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
-      }
-    };
-  });
-
 function App() {
-  const data = useLoaderData<typeof loader>();
-  
   return (
     <html lang="en">
       <head>
@@ -58,11 +32,6 @@ function App() {
           <Outlet />
         </main>
         <ScrollRestoration />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
-          }}
-        />
         <Scripts />
       </body>
     </html>
@@ -106,4 +75,4 @@ export function ErrorBoundary() {
   );
 }
 
-export default ClerkApp(App);
+export default App;
