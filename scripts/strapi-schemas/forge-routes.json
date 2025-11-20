@@ -1,0 +1,20 @@
+{
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/forges",
+      "handler": "forge.find",
+      "config": {
+        "policies": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/forges/:id",
+      "handler": "forge.findOne",
+      "config": {
+        "policies": []
+      }
+    }
+  ]
+}

@@ -308,7 +308,7 @@ wait_for_service("http://localhost:3000", timeout=30)
 
 **Command**:
 ```bash
-/gigaforge:deploying-to-vercel [--branch feature-clerk-auth-ui|main]
+/gigaforge:deploying-to-vercel [--branch v2-pivot|main]
 ```
 
 **Parameters**:
@@ -324,7 +324,7 @@ wait_for_service("http://localhost:3000", timeout=30)
   },
   "deployment": {
     "url": "https://gigaforge-web-abc123.vercel.app",
-    "branch": "feature-clerk-auth-ui",
+    "branch": "v2-pivot",
     "commit": "d22c855"
   },
   "smoke_tests": {
@@ -345,7 +345,7 @@ wait_for_service("http://localhost:3000", timeout=30)
 **Integration Pattern**:
 ```bash
 # Deploy to Vercel
-result = execute("/gigaforge:deploying-to-vercel --branch feature-clerk-auth-ui")
+result = execute("/gigaforge:deploying-to-vercel --branch v2-pivot")
 
 if result.status == "deployed":
   log(f"Deployed to: {result.deployment.url}")

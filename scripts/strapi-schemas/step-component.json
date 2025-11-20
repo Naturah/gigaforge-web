@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_default_steps",
+  "info": {
+    "displayName": "Step",
+    "description": "Individual step in a forge journey"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "richtext"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  }
+}

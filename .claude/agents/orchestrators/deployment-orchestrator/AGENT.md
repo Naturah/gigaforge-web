@@ -67,7 +67,7 @@ git commit -m "deploy: Ready for deployment"
 
 **B. Push to Remote**:
 ```bash
-git push origin $BRANCH  # feature-clerk-auth-ui or main
+git push origin $BRANCH  # v2-pivot or main
 ```
 
 **C. Wait for Vercel Build**:
@@ -107,7 +107,7 @@ curl -I https://gigaforge.xyz/api/create-checkout-session
   "status": "success",
   "deployment": {
     "url": "https://gigaforge.xyz",
-    "branch": "feature-clerk-auth-ui",
+    "branch": "v2-pivot",
     "commit": "abc1234",
     "build_time": "3m 24s",
     "verification": {
@@ -147,9 +147,9 @@ curl -I https://gigaforge.xyz/api/create-checkout-session
 
 ## Decision Framework
 
-### When to Deploy to feature-clerk-auth-ui vs main
+### When to Deploy to v2-pivot vs main
 
-**feature-clerk-auth-ui** (development):
+**v2-pivot** (development):
 - Testing migration phases
 - Experimental features
 - Pre-production validation

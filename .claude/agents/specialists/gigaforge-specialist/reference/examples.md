@@ -21,7 +21,7 @@ Real-world usage scenarios for gigaforge-specialist execution.
 
 **Step 1: Validation**
 - Working directory: `C:\Users\andyl\Code\gigaforge-web` ✓
-- Branch: `feature-clerk-auth-ui` ✓
+- Branch: `v2-pivot` ✓
 - Clerk present in package.json: ✓ (ready to remove)
 
 **Step 2: File Deletions**
@@ -352,13 +352,13 @@ stripe trigger checkout.session.completed
 
 ## Example 4: Deployment to Vercel (Complete Workflow)
 
-**Scenario**: Deploy feature-clerk-auth-ui branch to Vercel with smoke tests
+**Scenario**: Deploy v2-pivot branch to Vercel with smoke tests
 
 ### Input
 ```json
 {
   "task": "Deploy to Vercel",
-  "branch": "feature-clerk-auth-ui",
+  "branch": "v2-pivot",
   "run_smoke_tests": true
 }
 ```
@@ -378,7 +378,7 @@ npm run build
 
 **Step 2: Push to GitHub**
 ```bash
-git push origin feature-clerk-auth-ui
+git push origin v2-pivot
 # Triggers Vercel auto-deploy
 ```
 
@@ -391,7 +391,7 @@ git push origin feature-clerk-auth-ui
 **Step 4: Smoke Tests**
 ```bash
 # Run deployment command with smoke tests
-/gigaforge:deploying-to-vercel --branch feature-clerk-auth-ui
+/gigaforge:deploying-to-vercel --branch v2-pivot
 # Returns:
 {
   "status": "deployed",
@@ -418,8 +418,8 @@ git push origin feature-clerk-auth-ui
     "commands_executed": [
       "npm run typecheck",
       "npm run build",
-      "git push origin feature-clerk-auth-ui",
-      "/gigaforge:deploying-to-vercel --branch feature-clerk-auth-ui"
+      "git push origin v2-pivot",
+      "/gigaforge:deploying-to-vercel --branch v2-pivot"
     ],
     "tests_passed": true,
     "deployment_status": "deployed",

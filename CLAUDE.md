@@ -6,7 +6,7 @@ GigaForge is a modern e-commerce platform for selling 3D printed collectibles, f
 
 **Live URLs:**
 - Production: gigaforge.xyz (main branch)
-- Development: gigaforge.xyz (feature-clerk-auth-ui branch)
+- Development: gigaforge.xyz (v2-pivot branch)
 
 ## Vision & Go-to-Market Strategy
 
@@ -201,6 +201,158 @@ BASE_URL=https://gigaforge.xyz
 NODE_ENV=production
 ```
 
+## Development Philosophy
+
+### Cloud-Only Development (Recommended)
+
+GigaForge uses a **cloud-first development approach** with the Vercel-GitHub pipeline:
+
+**Key Benefits:**
+- No local environment setup needed
+- Environment variables managed in Vercel dashboard
+- Automatic deployments on push
+- Three isolated environments for testing
+
+**Three-Tier Environment Structure:**
+
+1. **Production** (main branch)
+   - Live Stripe keys (`pk_live_`, `sk_live_`)
+   - Production Railway Strapi URL
+   - Deployed to: gigaforge.xyz
+
+2. **Preview/Pre-Production** (v2-pivot, PR branches)
+   - Test Stripe keys (`pk_test_`, `sk_test_`)
+   - Staging Railway Strapi URL (or same as production)
+   - Deployed to: `gigaforge-web-*.vercel.app`
+   - Automatic preview URL for each PR
+
+3. **Development** (feature branches)
+   - Sandbox/test Stripe keys
+   - Development Strapi instance
+   - Unique deployment per branch
+
+**Workflow:**
+```bash
+# 1. Create feature branch
+git checkout -b feature/new-feature
+
+# 2. Push to GitHub
+git push origin feature/new-feature
+
+# 3. Vercel auto-deploys and provides preview URL
+# Test at: https://gigaforge-web-feature-new-feature-xxx.vercel.app
+
+# 4. Create PR → Preview deployment attached
+# 5. Merge to v2-pivot → Pre-production deployment
+# 6. Merge to main → Production deployment
+```
+
+**Environment Variable Configuration:**
+- All env vars configured in **Vercel Dashboard** (not `.env` files)
+- Settings → Environment Variables → Select environment
+- Separate values for Production/Preview/Development
+- **Never commit** `.env` files to git
+
+### Local Development (Alternative)
+
+For local testing and development:
+
+**When to use:**
+- Debugging specific issues locally
+- Testing Stripe webhooks with Stripe CLI
+- Working offline
+- Running `/gigaforge:running-dev-stack` command
+
+**Setup:**
+- Use `.env.local` for local environment variables
+- Never commit `.env*` files (already in `.gitignore`)
+- See "Local Strapi Setup (Optional)" section below
+
+### Environment Variable Security Best Practices
+
+**⚠️ CRITICAL SECURITY RULES:**
+
+1. **Client vs. Server-Side Keys:**
+   - ✅ **Client-side OK**: `STRIPE_PUBLISHABLE_KEY` (starts with `pk_`)
+   - ❌ **Server-side ONLY**: `STRIPE_SECRET_KEY`, `STRAPI_API_TOKEN`, `STRIPE_WEBHOOK_SECRET`
+   - In Remix: Server-side keys are safe (SSR protects them)
+
+2. **Never Store Credentials In:**
+   - ❌ Git commits or `.env` files
+   - ❌ Code comments or documentation (use placeholders)
+   - ❌ Client-side code or browser console logs
+   - ✅ Vercel Dashboard environment variables only
+
+3. **Runtime Validation:**
+   - Always validate env vars at runtime
+   - Fail fast with clear error messages
+   - Example (add to `app/services/strapi.server.ts`):
+     ```typescript
+     if (!process.env.STRAPI_API_URL || !process.env.STRAPI_API_TOKEN) {
+       throw new Error(
+         'Missing required Strapi environment variables. ' +
+         'Check Vercel Dashboard → Settings → Environment Variables'
+       );
+     }
+     ```
+
+4. **Separate Accounts:**
+   - Use different Stripe accounts for test vs. live
+   - Never use live keys in development/preview environments
+   - Test mode: `pk_test_`, `sk_test_`
+   - Live mode: `pk_live_`, `sk_live_`
+
+5. **Debugging Environment Variables:**
+   ```typescript
+   // Safe: Check if var exists (doesn't expose value)
+   console.log('Strapi URL configured:', !!process.env.STRAPI_API_URL);
+
+   // UNSAFE: Never log actual values
+   // console.log('Strapi URL:', process.env.STRAPI_API_URL); ❌
+   ```
+
+   In Vercel build logs:
+   - Check "Environment Variables" section
+   - Values are redacted (shows only presence)
+   - Verify correct env is injected
+
+### Automated Deployment Flow
+
+**How Vercel-GitHub Integration Works:**
+
+1. **Feature Branch Push:**
+   ```bash
+   git push origin feature/stripe-webhook
+   ```
+   - Vercel detects push
+   - Creates preview deployment
+   - Uses "Development" environment variables
+   - Generates unique URL: `gigaforge-web-git-feature-stripe-webhook-xxx.vercel.app`
+   - Build logs available in Vercel dashboard
+
+2. **Pull Request Created:**
+   - Preview deployment attached to PR
+   - Comment with preview URL posted to PR
+   - Test in production-like environment
+   - Share URL with team for review
+
+3. **Merge to v2-pivot:**
+   - Pre-production deployment triggered
+   - Uses "Preview" environment variables
+   - Deployed to main preview URL
+   - Smoke test before merging to main
+
+4. **Merge to main:**
+   - Production deployment triggered
+   - Uses "Production" environment variables
+   - Deployed to gigaforge.xyz custom domain
+   - Monitor with `/gigaforge:checking-api-health`
+
+**Vercel Deployment Commands:**
+- Manual deploy: Push to GitHub (Vercel auto-deploys)
+- Use `/gigaforge:deploying-to-vercel` command for pre-deployment checks
+- Check status: Vercel Dashboard → Deployments
+
 ## Development Setup
 
 ### Prerequisites
@@ -248,32 +400,355 @@ Access admin: http://localhost:1337/admin
 
 ## Deployment
 
-### Strapi on Railway
+### Strapi on Railway (Phase 2)
 
-1. **Create Railway Project**
-   - Go to railway.app
-   - New Project → Deploy Strapi
-   - Automatically provisions PostgreSQL database
+**Estimated Time: 40 minutes**
 
-2. **Configure Strapi**
-   - Set admin credentials
-   - Create API token (Settings → API Tokens)
-   - Configure CORS to allow Vercel domain
+#### Step 1: Create Railway Project (5 minutes)
 
-3. **Create Content Types**
-   - Build Category, Product, Forge types (see Content Types section)
-   - Set permissions: Public read, Admin write
+1. **Go to Railway Dashboard**
+   - Navigate to https://railway.app
+   - Sign in or create account
+   - Click "New Project"
 
-4. **Add Content**
-   - Upload product images to media library
-   - Create categories and products
-   - Publish content
+2. **Deploy Strapi Template**
+   - Select "Deploy a Template"
+   - Search for "Strapi" (official template)
+   - Click "Deploy Now"
+   - Railway automatically provisions:
+     - Strapi service (Node.js container)
+     - PostgreSQL database
+     - Environment variables (`DATABASE_URL`, `PORT`, `HOST`)
+     - SSL certificates
+
+3. **Wait for Deployment**
+   - Monitor build logs (5-10 minutes)
+   - Copy your Strapi URL: `https://[project-name].up.railway.app`
+
+#### Step 2: Initial Strapi Configuration (5 minutes)
+
+1. **Complete Admin Setup Wizard**
+   - Open your Railway Strapi URL in browser
+   - First visit redirects to `/admin/auth/register-admin`
+   - Create admin user:
+     - Username: (your choice)
+     - Email: (your email)
+     - Password: (strong password - save in password manager!)
+   - Click "Let's Start"
+
+2. **Login to Admin Panel**
+   - URL: `https://[your-strapi].up.railway.app/admin`
+   - Use credentials from step above
+
+#### Step 3: Create Content Types (15 minutes)
+
+**Navigate to:** Content-Type Builder (left sidebar)
+
+##### 3.1 Create "Category" Content Type
+
+1. Click "Create new collection type"
+2. Display name: `Category`
+3. Click "Continue"
+4. Add fields:
+
+   **Field 1: name**
+   - Type: Text
+   - Name: `name`
+   - Type: Short text
+   - Required: ✓
+   - Unique: ✗
+
+   **Field 2: slug**
+   - Type: UID
+   - Name: `slug`
+   - Attached field: `name`
+   - Required: ✓
+
+   **Field 3: description**
+   - Type: Rich text (Blocks)
+   - Name: `description`
+   - Required: ✗
+
+   **Field 4: image**
+   - Type: Media
+   - Name: `image`
+   - Type: Single media
+   - Allowed types: images (png, jpg, jpeg, webp)
+   - Required: ✗
+
+5. Click "Save" (Strapi will restart - takes 30-60 seconds)
+
+##### 3.2 Create "Product" Content Type
+
+1. Click "Create new collection type"
+2. Display name: `Product`
+3. Add fields:
+
+   **Field 1: name**
+   - Type: Text
+   - Name: `name`
+   - Type: Short text
+   - Required: ✓
+
+   **Field 2: slug**
+   - Type: UID
+   - Name: `slug`
+   - Attached field: `name`
+   - Required: ✓
+
+   **Field 3: description**
+   - Type: Rich text (Blocks)
+   - Name: `description`
+   - Required: ✗
+
+   **Field 4: price**
+   - Type: Number
+   - Name: `price`
+   - Number format: Decimal
+   - Required: ✓
+
+   **Field 5: images**
+   - Type: Media
+   - Name: `images`
+   - Type: Multiple media
+   - Allowed types: images
+   - Required: ✗
+
+   **Field 6: features**
+   - Type: JSON
+   - Name: `features`
+   - Required: ✗
+   - (Will store array of feature strings)
+
+   **Field 7: inventory**
+   - Type: Number
+   - Name: `inventory`
+   - Number format: Integer
+   - Default value: 0
+   - Required: ✓
+
+   **Field 8: stripeProductId**
+   - Type: Text
+   - Name: `stripeProductId`
+   - Type: Short text
+   - Required: ✓
+
+   **Field 9: stripePriceId**
+   - Type: Text
+   - Name: `stripePriceId`
+   - Type: Short text
+   - Required: ✓
+
+   **Field 10: category** (Relation)
+   - Type: Relation
+   - Name: `category`
+   - Relation type: Many-to-One (Product belongs to one Category)
+   - Category has many Products
+   - Required: ✗
+
+   **Field 11: featured**
+   - Type: Boolean
+   - Name: `featured`
+   - Default value: false
+
+4. Click "Save" (wait for restart)
+
+##### 3.3 Create "Forge" Content Type
+
+1. Click "Create new collection type"
+2. Display name: `Forge`
+3. Add fields:
+
+   **Field 1: title**
+   - Type: Text
+   - Name: `title`
+   - Type: Short text
+   - Required: ✓
+
+   **Field 2: slug**
+   - Type: UID
+   - Name: `slug`
+   - Attached field: `title`
+   - Required: ✓
+
+   **Field 3: description**
+   - Type: Rich text (Blocks)
+   - Name: `description`
+
+   **Field 4: difficulty**
+   - Type: Enumeration
+   - Name: `difficulty`
+   - Values: `Beginner`, `Intermediate`, `Advanced`
+
+   **Field 5: printCount**
+   - Type: Number
+   - Name: `printCount`
+   - Number format: Integer
+
+   **Field 6: estimatedTime**
+   - Type: Text
+   - Name: `estimatedTime`
+   - Type: Short text
+   - (e.g., "2-3 hours")
+
+   **Field 7: image**
+   - Type: Media
+   - Name: `image`
+   - Type: Single media
+   - Allowed types: images
+
+   **Field 8: category** (Relation)
+   - Type: Relation
+   - Name: `category`
+   - Relation type: Many-to-One (Forge belongs to Category)
+
+   **Field 9: steps** (Component - repeatable)
+   - First, create component:
+     - Category: "default"
+     - Name: "Step"
+     - Add to component:
+       - `title` (Text - Short text)
+       - `description` (Rich text)
+       - `image` (Media - Single media)
+   - Then add to Forge:
+     - Type: Component
+     - Name: `steps`
+     - Component: `default.step`
+     - Type: Repeatable component
+
+4. Click "Save"
+
+#### Step 4: Configure API Permissions (3 minutes)
+
+1. **Navigate to:** Settings → Users & Permissions Plugin → Roles
+
+2. **Edit "Public" Role:**
+   - Click "Public"
+   - Scroll to permissions section
+
+3. **Enable Read Permissions:**
+   - **Category**: Check `find` and `findOne`
+   - **Product**: Check `find` and `findOne`
+   - **Forge**: Check `find` and `findOne`
+   - **Upload** (for media): Check `find` and `findOne`
+
+4. Click "Save" (top right)
+
+#### Step 5: Create API Token (2 minutes)
+
+1. **Navigate to:** Settings → API Tokens
+
+2. **Create New Token:**
+   - Click "Create new API Token"
+   - Name: `GigaForge Frontend`
+   - Token type: **Full Access** (needed for webhook in Phase 4)
+   - Token duration: Unlimited
+   - Click "Save"
+
+3. **Copy Token:**
+   - ⚠️ **IMPORTANT**: Copy the token NOW (shown only once!)
+   - Save in password manager
+   - You'll add this to Vercel env vars in Step 7
+
+#### Step 6: Configure CORS (3 minutes)
+
+1. **Navigate to Railway Dashboard:**
+   - Select your Strapi service
+   - Go to "Variables" tab
+
+2. **Add Environment Variables:**
+   ```
+   CORS_ENABLED=true
+   CLIENT_URL=https://gigaforge.xyz,https://*.vercel.app
+   ```
+   - Click "Add Variable" for each
+   - Alternative: Edit directly in Railway dashboard
+
+3. **Redeploy Strapi:**
+   - Changes to env vars trigger automatic redeploy
+   - Or manually: Click "⋮" → "Redeploy"
+   - Wait for deployment (1-2 minutes)
+
+#### Step 7: Seed Initial Content (10 minutes)
+
+1. **Create Categories:**
+   - Navigate to: Content Manager → Category → Create new entry
+   - Examples:
+     - Technology (slug: technology)
+     - Home Improvement (slug: home-improvement)
+     - Art & Design (slug: art-design)
+   - Click "Save" and "Publish" for each
+
+2. **Upload Product Images:**
+   - Navigate to: Media Library
+   - Click "Upload assets"
+   - Upload product images
+   - Organize into folders if desired
+
+3. **Create Products:**
+   - Navigate to: Content Manager → Product → Create new entry
+   - Fill in fields:
+     - Name, slug, description
+     - Price (decimal, e.g., 29.99)
+     - Select images from media library
+     - Features (JSON format): `["Feature 1", "Feature 2"]`
+     - Inventory (e.g., 10)
+     - Stripe Product ID: Get from Stripe Dashboard
+     - Stripe Price ID: Get from Stripe Dashboard
+     - Select category (relation)
+     - Featured: Check if want on homepage
+   - Click "Save" and "Publish"
+   - Repeat for initial products
+
+4. **(Optional) Create Forges:**
+   - Similar process to Products
+   - Use component builder for steps
+
+#### Step 8: Verification (2 minutes)
+
+1. **Test API Endpoints:**
+   ```bash
+   # Test public endpoint (no auth needed)
+   curl https://[your-strapi].up.railway.app/api/categories
+
+   # Test with API token
+   curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://[your-strapi].up.railway.app/api/products
+   ```
+
+2. **Check CORS:**
+   - Open browser console on Vercel domain
+   - Attempt to fetch Strapi API
+   - Should not see CORS errors
+
+3. **Health Check:**
+   - URL: `https://[your-strapi].up.railway.app/_health`
+   - Should return: `{"status": "ok"}`
+
+---
+
+**✅ Phase 2 Checklist:**
+- [ ] Railway Strapi deployed and accessible
+- [ ] Admin account created and can login
+- [ ] Category content type created (4 fields)
+- [ ] Product content type created (11 fields)
+- [ ] Forge content type created (9 fields)
+- [ ] Public API permissions enabled (find, findOne)
+- [ ] API token created and saved
+- [ ] CORS configured for Vercel domains
+- [ ] At least 3 categories created and published
+- [ ] At least 5 products created and published
+- [ ] API endpoints tested and returning data
+
+**Next Steps:**
+- Add `STRAPI_API_URL` and `STRAPI_API_TOKEN` to Vercel environment variables
+- Proceed to Phase 3: Integrate Strapi API with Remix Frontend
 
 ### Frontend on Vercel
 
 1. **Connect Repository**
    - Import gigaforge-web from GitHub
-   - Branch: `feature-clerk-auth-ui` (development) or `main` (production)
+   - Branch: `v2-pivot` (development) or `main` (production)
 
 2. **Configure Environment Variables**
    - Add all production env vars (see Environment Variables section)
@@ -421,7 +896,7 @@ Track progress: https://github.com/Naturah/gigaforge-web/issues
 
 ### Git Workflow
 - Main branch: `main` (production)
-- Development branch: `feature-clerk-auth-ui`
+- Development branch: `v2-pivot`
 - Create feature branches from development
 - Write descriptive commit messages
 - Test before pushing

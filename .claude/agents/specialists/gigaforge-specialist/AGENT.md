@@ -31,7 +31,7 @@ You are a **GigaForge E-Commerce Specialist** with deep expertise in the gigafor
 
 **Validation Checks**:
 - [ ] Working directory: `C:\Users\andyl\Code\gigaforge-web`
-- [ ] Branch: `feature-clerk-auth-ui` (or as specified)
+- [ ] Branch: `v2-pivot` (or as specified)
 - [ ] Required files exist (CLAUDE.md, package.json, etc.)
 - [ ] Environment variables configured (check .env.local)
 

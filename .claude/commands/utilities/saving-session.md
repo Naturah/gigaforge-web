@@ -104,12 +104,12 @@ git push origin [current-branch]
 
 **Prompts** (if not --no-push):
 ```
-Push to origin/feature-clerk-auth-ui? [Y/n]
+Push to origin/v2-pivot? [Y/n]
 ```
 
 **Displays**:
 ```
-✓ Pushed to origin/feature-clerk-auth-ui
+✓ Pushed to origin/v2-pivot
   Commit: abc1234
 ```
 
@@ -136,7 +136,7 @@ If yes, closes issue with comment in a single operation (prevents re-open bug):
 
 **Next Session**: Begin Phase 2 - Deploy Strapi on Railway
 
-**Environment**: feature-clerk-auth-ui branch
+**Environment**: v2-pivot branch
 ```
 
 **Command** (single operation to prevent re-opening):
@@ -162,7 +162,7 @@ EOF)"
 ✅ SESSION SAVED
 
 📦 Commit:  abc1234 - feat: Complete Phase 1 Clerk removal
-🚀 Pushed:  origin/feature-clerk-auth-ui
+🚀 Pushed:  origin/v2-pivot
 🎯 Closed:  Issue #2
 ⏭️  Next:   Run /starting-session at session start
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -180,7 +180,7 @@ EOF)"
 2. Generates commit message
 3. Prompts: "Use this message? [Y/n/e]"
 4. Commits
-5. Prompts: "Push to origin/feature-clerk-auth-ui? [Y/n]"
+5. Prompts: "Push to origin/v2-pivot? [Y/n]"
 6. Pushes
 7. Prompts: "Close Issue #2? [Y/n]"
 8. Closes issue with summary
@@ -333,7 +333,7 @@ This command creates the **handoff mechanism** for next session:
 **Next Session**: [Inferred from pending tasks]
 
 **Commit**: [commit-hash]
-**Branch**: feature-clerk-auth-ui
+**Branch**: v2-pivot
 ```
 
 **Data Sources**:
@@ -387,7 +387,7 @@ feat: Complete Phase 1 Clerk removal
 - Close GitHub Issue #2
 
 Migration: Phase 1 COMPLETE ✅
-Branch: feature-clerk-auth-ui
+Branch: v2-pivot
 ```
 
 ## GitHub Issue Summary Format
@@ -403,7 +403,7 @@ When closing issues, the comment includes:
 **Migration Status** (current state):
 - Phase: X of 6
 - Status: COMPLETE/IN PROGRESS
-- Branch: feature-clerk-auth-ui
+- Branch: v2-pivot
 
 **Next Session** (what to do next):
 - Next phase to tackle
@@ -441,7 +441,7 @@ Run: gh auth login
 **Push failed (behind remote)**:
 ```
 ❌ Error: Push rejected (behind remote)
-Run: git pull origin feature-clerk-auth-ui
+Run: git pull origin v2-pivot
 Then retry: /saving-session
 ```
 
@@ -553,7 +553,7 @@ Use `--auto` when confident, interactive mode when cautious.
 6. Phase 6: Testing & Deployment (Issue #7)
 
 **Branch Strategy**:
-- `feature-clerk-auth-ui`: Development branch (all phases)
+- `v2-pivot`: Development branch (all phases)
 - `main`: Production (after Phase 6 complete)
 
 **Deployment Targets**:

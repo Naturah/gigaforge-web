@@ -10,7 +10,7 @@ Complete architecture reference for the gigaforge-web e-commerce platform.
 
 **Repository**: https://github.com/Naturah/gigaforge-web
 **Production**: gigaforge.xyz
-**Current Branch**: feature-clerk-auth-ui
+**Current Branch**: v2-pivot
 
 ---
 

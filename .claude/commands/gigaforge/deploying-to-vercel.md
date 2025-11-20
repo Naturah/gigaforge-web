@@ -1,6 +1,6 @@
 ---
 description: Deploy to Vercel and verify deployment
-argument-hint: [--branch feature-clerk-auth-ui|main]
+argument-hint: [--branch v2-pivot|main]
 allowed-tools: [Bash, Read]
 ---
 
@@ -21,7 +21,7 @@ Deploy GigaForge to Vercel and verify deployment success. Runs pre-deployment ch
 
 ## Arguments
 
-- `--branch` (optional) - Branch to deploy: `feature-clerk-auth-ui` (default) or `main`
+- `--branch` (optional) - Branch to deploy: `v2-pivot` (default) or `main`
 
 ## Implementation Steps
 

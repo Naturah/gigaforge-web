@@ -141,7 +141,7 @@ Display formatted report directly to user (**no file writes**):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Repository: Naturah/gigaforge-web
-Branch: feature-clerk-auth-ui
+Branch: v2-pivot
 Last Fetched: [timestamp] (live data)
 
 📚 ESSENTIAL DOCS LOADED
@@ -184,7 +184,7 @@ Last Fetched: [timestamp] (live data)
 
 Total Open: [count]
 Migration Progress: Phase [X] of 6
-Current Branch: feature-clerk-auth-ui
+Current Branch: v2-pivot
 
 Environment Variables Status:
   ✅ STRAPI_API_URL configured
